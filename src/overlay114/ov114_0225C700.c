@@ -34,7 +34,7 @@
 #include "narc.h"
 #include "unk_02006E3C.h"
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
 #include "message.h"
@@ -85,7 +85,7 @@ typedef struct {
 } UnkStruct_ov114_0225CDB4;
 
 typedef struct {
-    UnkStruct_02009714 * unk_00[4];
+    SpriteResourceCollection * unk_00[4];
     UnkStruct_ov114_0225CDB4 * unk_10;
     u32 unk_14;
 } UnkStruct_ov114_0225CCD0;

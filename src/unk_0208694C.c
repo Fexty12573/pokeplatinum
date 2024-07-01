@@ -31,7 +31,7 @@
 #include "narc.h"
 #include "unk_02006E3C.h"
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
 #include "message.h"
@@ -97,7 +97,7 @@ struct UnkStruct_02087A10_t {
     Strbuf* unk_184;
     CellActorCollection * unk_188;
     UnkStruct_0200C738 unk_18C;
-    UnkStruct_02009714 * unk_318[4];
+    SpriteResourceCollection * unk_318[4];
     UnkStruct_02009DC8 * unk_328[2][4];
     CellActorResourceData unk_348;
     CellActorResourceData unk_36C;

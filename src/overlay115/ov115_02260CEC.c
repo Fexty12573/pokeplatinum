@@ -39,7 +39,7 @@
 #include "narc.h"
 #include "unk_02006E3C.h"
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
 #include "unk_0200A9DC.h"
@@ -291,7 +291,7 @@ typedef struct {
     GenericPointerData * unk_18;
     CellActorCollection * unk_1C;
     UnkStruct_0200C738 unk_20;
-    UnkStruct_02009714 * unk_1AC[4];
+    SpriteResourceCollection * unk_1AC[4];
     CellActorResourceData unk_1BC;
     UnkStruct_02009DC8 * unk_1E0[4];
     UnkStruct_02012744 * unk_1F0;

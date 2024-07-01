@@ -46,7 +46,7 @@
 #include "unk_02006E3C.h"
 #include "unk_0200762C.h"
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
 #include "message.h"
@@ -220,7 +220,7 @@ typedef struct ChooseStarterApp {
     UIControlData * unk_B8;
     UnkStruct_0200C738 unk_BC;
     CellActorCollection * unk_248;
-    UnkStruct_02009714 * unk_24C[6];
+    SpriteResourceCollection * unk_24C[6];
     UnkStruct_02007768 *spriteManager;
     Sprite *sprites[NUM_STARTER_OPTIONS];
     StarterPreviewGraphics unk_274;

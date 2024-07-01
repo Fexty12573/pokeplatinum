@@ -15,7 +15,7 @@
 #include "overlay104/struct_ov104_02241308.h"
 
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_02017728.h"
 #include "heap.h"

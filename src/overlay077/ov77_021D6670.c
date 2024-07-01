@@ -9,7 +9,7 @@
 #include "overlay022/struct_ov22_022559F8.h"
 
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
 #include "sys_task.h"
@@ -52,7 +52,7 @@ typedef struct {
 typedef struct {
     CellActorCollection * unk_00;
     UnkStruct_0200C738 unk_04;
-    UnkStruct_02009714 * unk_190[4];
+    SpriteResourceCollection * unk_190[4];
     UnkStruct_02009DC8 * unk_1A0[4];
     UnkStruct_ov77_021D6ADC unk_1B0[10];
 } UnkStruct_ov77_021D6800;

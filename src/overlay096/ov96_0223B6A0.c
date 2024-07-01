@@ -21,7 +21,7 @@
 #include "overlay_manager.h"
 #include "narc.h"
 #include "unk_020093B4.h"
-#include "unk_02009714.h"
+#include "sprite_util.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
 #include "message.h"
