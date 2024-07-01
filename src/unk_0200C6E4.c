@@ -265,7 +265,7 @@ BOOL sub_0200C8F0 (SpriteRenderer * param0, SpriteGfxHandler * param1, const Unk
         v3 = sub_02009F38(param1->unk_08, v0);
         v2 = sub_02009FA4(v3);
 
-        param1->unk_0C[v0] = sub_02009714(v2, v0, param0->unk_00);
+        param1->unk_0C[v0] = SpriteResourceCollection_New(v2, v0, param0->unk_00);
     }
 
     for (v0 = 0; v0 < v1; v0++) {
@@ -346,7 +346,7 @@ BOOL sub_0200CB30 (SpriteRenderer * param0, SpriteGfxHandler * param1, const Unk
     param1->unk_54 = v2;
 
     for (v0 = 0; v0 < v2; v0++) {
-        param1->unk_0C[v0] = sub_02009714(param2->val1[v0], v0, param0->unk_00);
+        param1->unk_0C[v0] = SpriteResourceCollection_New(param2->val1[v0], v0, param0->unk_00);
     }
 
     for (v0 = 0; v0 < v2; v0++) {
