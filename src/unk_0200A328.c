@@ -10,91 +10,83 @@
 #include "unk_0201E86C.h"
 #include "unk_0201F834.h"
 
-BOOL sub_0200A328(const SpriteResource *param0)
+BOOL sub_0200A328(const SpriteResource *tileResource)
 {
-    UnkStruct_0200A328 v0;
+    UnkStruct_0200A328 tiles;
 
-    GF_ASSERT(param0);
-    GF_ASSERT(SpriteResource_GetType(param0) == 0);
+    GF_ASSERT(tileResource);
+    GF_ASSERT(SpriteResource_GetType(tileResource) == SPRITE_RESOURCE_TILES);
 
-    v0.unk_00 = SpriteResource_GetTileData(param0);
-    v0.unk_04 = SpriteResource_GetVRAMType(param0);
-    v0.unk_08 = SpriteResource_GetID(param0);
-    v0.unk_0C = 0;
+    tiles.tileData = SpriteResource_GetTileData(tileResource);
+    tiles.vramType = SpriteResource_GetVRAMType(tileResource);
+    tiles.id = SpriteResource_GetID(tileResource);
+    tiles.unk_0C = 0;
 
-    return sub_0201EA24(&v0);
+    return sub_0201EA24(&tiles);
 }
 
-void sub_0200A368(const SpriteResourceList *param0)
+void sub_0200A368(const SpriteResourceList *tileResources)
 {
-    int v0;
-    BOOL v1;
+    GF_ASSERT(tileResources);
 
-    GF_ASSERT(param0);
-
-    for (v0 = 0; v0 < param0->capacity; v0++) {
-        if (param0->resources[v0]) {
-            v1 = sub_0200A328(param0->resources[v0]);
-            GF_ASSERT(v1);
+    for (int i = 0; i < tileResources->capacity; i++) {
+        if (tileResources->resources[i]) {
+            GF_ASSERT(sub_0200A328(tileResources->resources[i]));
         }
     }
 }
 
-BOOL sub_0200A39C(const SpriteResource *param0)
+BOOL sub_0200A39C(const SpriteResource *tileResource)
 {
     UnkStruct_0200A328 v0;
 
-    GF_ASSERT(param0);
-    GF_ASSERT(SpriteResource_GetType(param0) == 0);
+    GF_ASSERT(tileResource);
+    GF_ASSERT(SpriteResource_GetType(tileResource) == SPRITE_RESOURCE_TILES);
 
-    v0.unk_00 = SpriteResource_GetTileData(param0);
-    v0.unk_04 = SpriteResource_GetVRAMType(param0);
-    v0.unk_08 = SpriteResource_GetID(param0);
+    v0.tileData = SpriteResource_GetTileData(tileResource);
+    v0.vramType = SpriteResource_GetVRAMType(tileResource);
+    v0.id = SpriteResource_GetID(tileResource);
     v0.unk_0C = 0;
 
     return sub_0201EA7C(&v0);
 }
 
-BOOL sub_0200A3DC(const SpriteResource *param0)
+BOOL sub_0200A3DC(const SpriteResource *tileResource)
 {
     UnkStruct_0200A328 v0;
 
-    GF_ASSERT(param0);
-    GF_ASSERT(SpriteResource_GetType(param0) == 0);
+    GF_ASSERT(tileResource);
+    GF_ASSERT(SpriteResource_GetType(tileResource) == SPRITE_RESOURCE_TILES);
 
-    v0.unk_00 = SpriteResource_GetTileData(param0);
-    v0.unk_04 = SpriteResource_GetVRAMType(param0);
-    v0.unk_08 = SpriteResource_GetID(param0);
+    v0.tileData = SpriteResource_GetTileData(tileResource);
+    v0.vramType = SpriteResource_GetVRAMType(tileResource);
+    v0.id = SpriteResource_GetID(tileResource);
     v0.unk_0C = 1;
 
     return sub_0201EA24(&v0);
 }
 
-void sub_0200A41C(const SpriteResourceList *param0)
+void sub_0200A41C(const SpriteResourceList *tileResources)
 {
-    int v0;
-    BOOL v1;
+    GF_ASSERT(tileResources);
 
-    GF_ASSERT(param0);
-
-    for (v0 = 0; v0 < param0->capacity; v0++) {
-        if (param0->resources[v0]) {
-            v1 = sub_0200A3DC(param0->resources[v0]);
-            GF_ASSERT(v1);
+    for (int i = 0; i < tileResources->capacity; i++) {
+        if (tileResources->resources[i]) {
+            GF_ASSERT(sub_0200A3DC(tileResources->resources[i]));
         }
     }
 }
 
-BOOL sub_0200A450(const SpriteResource *param0)
+BOOL sub_0200A450(const SpriteResource *tileResources)
 {
     UnkStruct_0200A328 v0;
 
-    GF_ASSERT(param0);
-    GF_ASSERT(SpriteResource_GetType(param0) == 0);
+    GF_ASSERT(tileResources);
+    GF_ASSERT(SpriteResource_GetType(tileResources) == SPRITE_RESOURCE_TILES);
 
-    v0.unk_00 = SpriteResource_GetTileData(param0);
-    v0.unk_04 = SpriteResource_GetVRAMType(param0);
-    v0.unk_08 = SpriteResource_GetID(param0);
+    v0.tileData = SpriteResource_GetTileData(tileResources);
+    v0.vramType = SpriteResource_GetVRAMType(tileResources);
+    v0.id = SpriteResource_GetID(tileResources);
     v0.unk_0C = 1;
 
     return sub_0201EA7C(&v0);
