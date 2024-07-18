@@ -77,7 +77,7 @@ pokeplatinum_c = files(
     'unk_0201E190.c',
     'unk_0201E3BC.c',
     'unk_0201E3D8.c',
-    'unk_0201E86C.c',
+    'tile_manager.c',
     'unk_0201F834.c',
     'camera.c',
     'unk_02020AEC.c',

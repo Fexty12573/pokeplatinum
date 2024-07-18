@@ -31,7 +31,7 @@
 #include "unk_02012744.h"
 #include "unk_02018340.h"
 #include "unk_0201D670.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "strbuf.h"
 #include "game_options.h"
 #include "unk_0208A3F4.h"

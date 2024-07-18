@@ -17,7 +17,7 @@
 #include "unk_020093B4.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_0201F834.h"
 
 void ov106_02243310(UnkStruct_ov106_02243310 *param0, Pokemon *param1);

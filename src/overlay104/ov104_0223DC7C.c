@@ -31,7 +31,7 @@
 #include "unk_02012744.h"
 #include "unk_02018340.h"
 #include "unk_0201D670.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 
 typedef struct {
     Window unk_00;

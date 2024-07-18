@@ -63,7 +63,7 @@
 #include "unk_0201D670.h"
 #include "unk_0201DBEC.h"
 #include "ascii_util.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_0201F834.h"
 #include "gx_layers.h"
 #include "cell_actor.h"

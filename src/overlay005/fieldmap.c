@@ -74,7 +74,7 @@
 #include "unk_02017728.h"
 #include "unk_02018340.h"
 #include "unk_0201DBEC.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_0201F834.h"
 #include "unk_02020AEC.h"
 #include "unk_0202419C.h"

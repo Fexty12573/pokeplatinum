@@ -49,7 +49,7 @@
 #include "unk_02014000.h"
 #include "unk_02018340.h"
 #include "unk_0201D670.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_0202419C.h"
 #include "unk_02024220.h"
 #include "unk_0202C9F4.h"

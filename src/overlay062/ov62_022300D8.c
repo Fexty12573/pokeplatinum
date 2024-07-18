@@ -35,7 +35,7 @@
 #include "unk_02018340.h"
 #include "unk_0201D15C.h"
 #include "unk_0201D670.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_02030A80.h"
 #include "unk_0208C010.h"
 

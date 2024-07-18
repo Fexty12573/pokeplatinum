@@ -1,5 +1,5 @@
-#ifndef POKEPLATINUM_UNK_0201E86C_H
-#define POKEPLATINUM_UNK_0201E86C_H
+#ifndef POKEPLATINUM_TILE_MANAGER_H
+#define POKEPLATINUM_TILE_MANAGER_H
 
 #include <nitro/gx.h>
 #include <nnsys.h>
@@ -31,4 +31,4 @@ void sub_0201EEB8(void *param0);
 void sub_0201F460(void);
 int sub_0201F6F4(int param0);
 
-#endif // POKEPLATINUM_UNK_0201E86C_H
+#endif // POKEPLATINUM_TILE_MANAGER_H

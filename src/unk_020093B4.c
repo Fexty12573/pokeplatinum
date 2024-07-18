@@ -12,7 +12,7 @@
 #include "sprite_resource.h"
 #include "unk_0200A328.h"
 #include "unk_0200A784.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_0201F834.h"
 #include "unk_0202309C.h"
 

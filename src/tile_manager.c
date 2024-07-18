@@ -1,4 +1,4 @@
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 
 #include <nitro.h>
 #include <string.h>
@@ -27,7 +27,7 @@ typedef struct {
     u32 unk_50;
 } UnkStruct_0201EED4;
 
-typedef struct {
+typedef struct TileManager {
     UnkStruct_0201EED4 *unk_00;
     int unk_04;
     int unk_08;
@@ -43,7 +43,7 @@ typedef struct {
     u32 unk_30;
     u8 *unk_34;
     u8 *unk_38;
-} UnkStruct_021C0760;
+} TileManager;
 
 static void sub_0201EED4(UnkStruct_0201EED4 *param0);
 static BOOL sub_0201EEF8(const UnkStruct_0200A328 *param0, UnkStruct_0201EED4 *param1);
@@ -80,7 +80,7 @@ static int sub_0201F754(int param0, int param1);
 static int sub_0201F764(int param0, int param1);
 static void sub_0201F818(u32 param0, u32 param1, u32 param2, int *param3, int *param4);
 
-static UnkStruct_021C0760 *Unk_021C0760 = NULL;
+static TileManager *sTileManager = NULL;
 
 void sub_0201E86C(const UnkStruct_ov22_022559F8 *param0)
 {
@@ -93,25 +93,25 @@ void sub_0201E88C(const UnkStruct_ov22_022559F8 *param0, GXOBJVRamModeChar param
     int v1;
     int v2;
 
-    if (Unk_021C0760 == NULL) {
-        Unk_021C0760 = Heap_AllocFromHeap(param0->unk_0C, sizeof(UnkStruct_021C0760));
-        MI_CpuClear32(Unk_021C0760, sizeof(UnkStruct_021C0760));
+    if (sTileManager == NULL) {
+        sTileManager = Heap_AllocFromHeap(param0->unk_0C, sizeof(TileManager));
+        MI_CpuClear32(sTileManager, sizeof(TileManager));
 
-        Unk_021C0760->unk_04 = param0->unk_00;
-        Unk_021C0760->unk_00 = Heap_AllocFromHeap(param0->unk_0C, sizeof(UnkStruct_0201EED4) * Unk_021C0760->unk_04);
+        sTileManager->unk_04 = param0->unk_00;
+        sTileManager->unk_00 = Heap_AllocFromHeap(param0->unk_0C, sizeof(UnkStruct_0201EED4) * sTileManager->unk_04);
 
         for (v0 = 0; v0 < param0->unk_00; v0++) {
-            sub_0201EED4(Unk_021C0760->unk_00 + v0);
+            sub_0201EED4(sTileManager->unk_00 + v0);
         }
 
-        Unk_021C0760->unk_2C = sub_0201F6F4(param1);
-        Unk_021C0760->unk_30 = sub_0201F6F4(param2);
+        sTileManager->unk_2C = sub_0201F6F4(param1);
+        sTileManager->unk_30 = sub_0201F6F4(param2);
 
         GX_SetOBJVRamModeChar(param1);
         GXS_SetOBJVRamModeChar(param2);
 
-        v1 = sub_0201F754(param0->unk_04, Unk_021C0760->unk_2C);
-        v2 = sub_0201F754(param0->unk_08, Unk_021C0760->unk_30);
+        v1 = sub_0201F754(param0->unk_04, sTileManager->unk_2C);
+        v2 = sub_0201F754(param0->unk_08, sTileManager->unk_30);
 
         sub_0201F47C(v1, v2, param0->unk_0C);
     }
@@ -119,26 +119,26 @@ void sub_0201E88C(const UnkStruct_ov22_022559F8 *param0, GXOBJVRamModeChar param
 
 void sub_0201E958(void)
 {
-    if (Unk_021C0760 != NULL) {
-        sub_0201F4E4(Unk_021C0760->unk_34);
-        sub_0201F4E4(Unk_021C0760->unk_38);
+    if (sTileManager != NULL) {
+        sub_0201F4E4(sTileManager->unk_34);
+        sub_0201F4E4(sTileManager->unk_38);
 
         sub_0201EBA0();
 
-        Heap_FreeToHeap(Unk_021C0760->unk_00);
-        Heap_FreeToHeap(Unk_021C0760);
+        Heap_FreeToHeap(sTileManager->unk_00);
+        Heap_FreeToHeap(sTileManager);
 
-        Unk_021C0760 = NULL;
+        sTileManager = NULL;
     }
 }
 
 void sub_0201E994(void)
 {
-    Unk_021C0760->unk_0C = 0;
-    Unk_021C0760->unk_10 = 0;
+    sTileManager->unk_0C = 0;
+    sTileManager->unk_10 = 0;
 
-    sub_0201F524(Unk_021C0760->unk_34);
-    sub_0201F524(Unk_021C0760->unk_38);
+    sub_0201F524(sTileManager->unk_34);
+    sub_0201F524(sTileManager->unk_38);
 
     sub_0201F30C();
 }
@@ -149,13 +149,13 @@ void sub_0201E9C0(u32 param0, u32 param1, u32 param2)
     int v1;
 
     if (param2 == NNS_G2D_VRAM_TYPE_2DMAIN) {
-        sub_0201F818(Unk_021C0760->unk_1C, param0, param1, &v0, &v1);
+        sub_0201F818(sTileManager->unk_1C, param0, param1, &v0, &v1);
 
         if (v1 > 0) {
             sub_0201F18C(NNS_G2D_VRAM_TYPE_2DMAIN, v0, 0, v1, 0);
         }
     } else {
-        sub_0201F818(Unk_021C0760->unk_20, param0, param1, &v0, &v1);
+        sub_0201F818(sTileManager->unk_20, param0, param1, &v0, &v1);
 
         if (v1 > 0) {
             sub_0201F18C(NNS_G2D_VRAM_TYPE_2DSUB, 0, v0, 0, v1);
@@ -170,7 +170,7 @@ BOOL sub_0201EA24(const UnkStruct_0200A328 *param0)
     u8 v2 = 0;
     u32 v3;
 
-    if (sub_0201EAD8(param0->unk_08) == 1) {
+    if (sub_0201EAD8(param0->id) == 1) {
         GF_ASSERT(FALSE);
     }
 
@@ -190,7 +190,7 @@ BOOL sub_0201EA24(const UnkStruct_0200A328 *param0)
         return 0;
     }
 
-    Unk_021C0760->unk_08++;
+    sTileManager->unk_08++;
 
     return 1;
 }
@@ -202,7 +202,7 @@ BOOL sub_0201EA7C(const UnkStruct_0200A328 *param0)
     u8 v2 = 0;
     u32 v3;
 
-    if (sub_0201EAD8(param0->unk_08) == 1) {
+    if (sub_0201EAD8(param0->id) == 1) {
         GF_ASSERT(FALSE);
     }
 
@@ -224,7 +224,7 @@ BOOL sub_0201EA7C(const UnkStruct_0200A328 *param0)
         return 0;
     }
 
-    Unk_021C0760->unk_08++;
+    sTileManager->unk_08++;
 
     return 1;
 }
@@ -233,8 +233,8 @@ BOOL sub_0201EAD8(int param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < Unk_021C0760->unk_04; v0++) {
-        if (Unk_021C0760->unk_00[v0].unk_0C == param0) {
+    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+        if (sTileManager->unk_00[v0].unk_0C == param0) {
             return 1;
         }
     }
@@ -279,7 +279,7 @@ void sub_0201EB50(int param0)
 
     if (v0->unk_3C != 0) {
         sub_0201F024(v0);
-        Unk_021C0760->unk_08--;
+        sTileManager->unk_08--;
     }
 }
 
@@ -287,10 +287,10 @@ void sub_0201EBA0(void)
 {
     int v0;
 
-    for (v0 = 0; v0 < Unk_021C0760->unk_04; v0++) {
-        if (Unk_021C0760->unk_00[v0].unk_3C != 0) {
-            sub_0201F024(&Unk_021C0760->unk_00[v0]);
-            Unk_021C0760->unk_08--;
+    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+        if (sTileManager->unk_00[v0].unk_3C != 0) {
+            sub_0201F024(&sTileManager->unk_00[v0]);
+            sTileManager->unk_08--;
         }
     }
 }
@@ -388,25 +388,25 @@ void sub_0201ED1C(const NNSG2dImageProxy *param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < Unk_021C0760->unk_04; v0++) {
-        if ((Unk_021C0760->unk_00[v0].unk_3C == 3) || (Unk_021C0760->unk_00[v0].unk_3C == 4)) {
-            if (&Unk_021C0760->unk_00[v0].unk_10 == param0) {
+    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+        if ((sTileManager->unk_00[v0].unk_3C == 3) || (sTileManager->unk_00[v0].unk_3C == 4)) {
+            if (&sTileManager->unk_00[v0].unk_10 == param0) {
                 break;
             }
         }
     }
 
-    if (v0 >= Unk_021C0760->unk_04) {
+    if (v0 >= sTileManager->unk_04) {
         return;
     }
 
-    sub_0201F670(Unk_021C0760->unk_00 + v0);
+    sub_0201F670(sTileManager->unk_00 + v0);
 
-    if (Unk_021C0760->unk_00[v0].unk_3C == 3) {
-        Unk_021C0760->unk_00[v0].unk_3C = 2;
+    if (sTileManager->unk_00[v0].unk_3C == 3) {
+        sTileManager->unk_00[v0].unk_3C = 2;
     } else {
-        Unk_021C0760->unk_00[v0].unk_3C = 0;
-        sub_0201EED4(&Unk_021C0760->unk_00[v0]);
+        sTileManager->unk_00[v0].unk_3C = 0;
+        sub_0201EED4(&sTileManager->unk_00[v0]);
     }
 }
 
@@ -443,10 +443,10 @@ BOOL sub_0201ED94(int param0, int param1, int param2, SpriteManagerAllocation *p
 
             if (param2 == NNS_G2D_VRAM_TYPE_2DMAIN) {
                 param3->unk_00 = v2;
-                param3->unk_04 = v0 + Unk_021C0760->unk_1C;
+                param3->unk_04 = v0 + sTileManager->unk_1C;
             } else {
                 param3->unk_00 = v3;
-                param3->unk_04 = v1 + Unk_021C0760->unk_20;
+                param3->unk_04 = v1 + sTileManager->unk_20;
             }
 
             param3->unk_0A = 1;
@@ -466,17 +466,17 @@ void sub_0201EE28(SpriteManagerAllocation *param0)
     }
 
     if (param0->unk_08 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        v0 = sub_0201F754(param0->unk_00, Unk_021C0760->unk_2C);
-        v1 = sub_0201F754(param0->unk_04 - Unk_021C0760->unk_1C, Unk_021C0760->unk_2C);
+        v0 = sub_0201F754(param0->unk_00, sTileManager->unk_2C);
+        v1 = sub_0201F754(param0->unk_04 - sTileManager->unk_1C, sTileManager->unk_2C);
 
-        sub_0201F620(v1, v0, Unk_021C0760->unk_34);
+        sub_0201F620(v1, v0, sTileManager->unk_34);
     }
 
     if (param0->unk_08 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        v0 = sub_0201F754(param0->unk_00, Unk_021C0760->unk_30);
-        v1 = sub_0201F754(param0->unk_04 - Unk_021C0760->unk_20, Unk_021C0760->unk_30);
+        v0 = sub_0201F754(param0->unk_00, sTileManager->unk_30);
+        v1 = sub_0201F754(param0->unk_04 - sTileManager->unk_20, sTileManager->unk_30);
 
-        sub_0201F620(v1, v0, Unk_021C0760->unk_38);
+        sub_0201F620(v1, v0, sTileManager->unk_38);
     }
 }
 
@@ -484,18 +484,18 @@ void *sub_0201EE9C(void)
 {
     void *v0;
 
-    GF_ASSERT(Unk_021C0760);
+    GF_ASSERT(sTileManager);
 
-    v0 = Unk_021C0760;
-    Unk_021C0760 = NULL;
+    v0 = sTileManager;
+    sTileManager = NULL;
 
     return v0;
 }
 
 void sub_0201EEB8(void *param0)
 {
-    GF_ASSERT(Unk_021C0760 == NULL);
-    Unk_021C0760 = param0;
+    GF_ASSERT(sTileManager == NULL);
+    sTileManager = param0;
 }
 
 static void sub_0201EED4(UnkStruct_0201EED4 *param0)
@@ -514,9 +514,9 @@ static void sub_0201EED4(UnkStruct_0201EED4 *param0)
 
 static BOOL sub_0201EEF8(const UnkStruct_0200A328 *param0, UnkStruct_0201EED4 *param1)
 {
-    param1->unk_00 = param0->unk_00;
-    param1->unk_0C = param0->unk_08;
-    param1->unk_04 = param0->unk_04;
+    param1->unk_00 = param0->tileData;
+    param1->unk_0C = param0->id;
+    param1->unk_04 = param0->vramType;
     param1->unk_08 = param1->unk_00->characterFmt >> 8;
     param1->unk_44 = param0->unk_0C;
 
@@ -531,19 +531,19 @@ static UnkStruct_0201EED4 *sub_0201EF1C(const NNSG2dImageProxy *param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < Unk_021C0760->unk_04; v0++) {
-        if (Unk_021C0760->unk_00[v0].unk_3C != 0) {
-            if (&Unk_021C0760->unk_00[v0].unk_10 == param0) {
+    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+        if (sTileManager->unk_00[v0].unk_3C != 0) {
+            if (&sTileManager->unk_00[v0].unk_10 == param0) {
                 break;
             }
         }
     }
 
-    if (v0 >= Unk_021C0760->unk_04) {
+    if (v0 >= sTileManager->unk_04) {
         return NULL;
     }
 
-    return Unk_021C0760->unk_00 + v0;
+    return sTileManager->unk_00 + v0;
 }
 
 static BOOL sub_0201EF68(UnkStruct_0201EED4 *param0)
@@ -617,9 +617,9 @@ static UnkStruct_0201EED4 *sub_0201F03C(int param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < Unk_021C0760->unk_04; v0++) {
-        if (Unk_021C0760->unk_00[v0].unk_0C == param0) {
-            return &Unk_021C0760->unk_00[v0];
+    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+        if (sTileManager->unk_00[v0].unk_0C == param0) {
+            return &sTileManager->unk_00[v0];
         }
     }
 
@@ -652,29 +652,29 @@ static BOOL sub_0201F0B0(int param0, u32 *param1, u32 *param2, u32 param3, u32 *
     u32 v0;
 
     if (param0 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        *param4 = sub_0201F734(param3, Unk_021C0760->unk_2C, 1);
-        v0 = sub_0201F754(*param4, Unk_021C0760->unk_2C);
-        *param1 = sub_0201F598(v0, Unk_021C0760->unk_34);
+        *param4 = sub_0201F734(param3, sTileManager->unk_2C, 1);
+        v0 = sub_0201F754(*param4, sTileManager->unk_2C);
+        *param1 = sub_0201F598(v0, sTileManager->unk_34);
 
         if (*param1 == 0xffffffff) {
             GF_ASSERT(FALSE);
             return 0;
         }
 
-        *param1 = sub_0201F764(*param1, Unk_021C0760->unk_2C);
+        *param1 = sub_0201F764(*param1, sTileManager->unk_2C);
     }
 
     if (param0 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        *param5 = sub_0201F734(param3, Unk_021C0760->unk_30, 1);
-        v0 = sub_0201F754(*param5, Unk_021C0760->unk_30);
-        *param2 = sub_0201F598(v0, Unk_021C0760->unk_38);
+        *param5 = sub_0201F734(param3, sTileManager->unk_30, 1);
+        v0 = sub_0201F754(*param5, sTileManager->unk_30);
+        *param2 = sub_0201F598(v0, sTileManager->unk_38);
 
         if (*param2 == 0xffffffff) {
             GF_ASSERT(FALSE);
             return 0;
         }
 
-        *param2 = sub_0201F764(*param2, Unk_021C0760->unk_30);
+        *param2 = sub_0201F764(*param2, sTileManager->unk_30);
     }
 
     return 1;
@@ -683,11 +683,11 @@ static BOOL sub_0201F0B0(int param0, u32 *param1, u32 *param2, u32 param3, u32 *
 static void sub_0201F15C(UnkStruct_0201EED4 *param0, u32 param1, u32 param2)
 {
     if (param0->unk_04 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        param0->unk_34 = param1 + Unk_021C0760->unk_1C;
+        param0->unk_34 = param1 + sTileManager->unk_1C;
     }
 
     if (param0->unk_04 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        param0->unk_38 = param2 + Unk_021C0760->unk_20;
+        param0->unk_38 = param2 + sTileManager->unk_20;
     }
 }
 
@@ -697,17 +697,17 @@ static void sub_0201F18C(int param0, u32 param1, u32 param2, u32 param3, u32 par
     int v1;
 
     if (param0 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        v0 = sub_0201F754(param3, Unk_021C0760->unk_2C);
-        v1 = sub_0201F754(param1, Unk_021C0760->unk_2C);
+        v0 = sub_0201F754(param3, sTileManager->unk_2C);
+        v1 = sub_0201F754(param1, sTileManager->unk_2C);
 
-        sub_0201F53C(v1, v0, Unk_021C0760->unk_34);
+        sub_0201F53C(v1, v0, sTileManager->unk_34);
     }
 
     if (param0 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        v0 = sub_0201F754(param4, Unk_021C0760->unk_30);
-        v1 = sub_0201F754(param2, Unk_021C0760->unk_30);
+        v0 = sub_0201F754(param4, sTileManager->unk_30);
+        v1 = sub_0201F754(param2, sTileManager->unk_30);
 
-        sub_0201F53C(v1, v0, Unk_021C0760->unk_38);
+        sub_0201F53C(v1, v0, sTileManager->unk_38);
     }
 }
 
@@ -794,9 +794,9 @@ static UnkStruct_0201EED4 *sub_0201F2D0(void)
 {
     int v0;
 
-    for (v0 = 0; v0 < Unk_021C0760->unk_04; v0++) {
-        if (Unk_021C0760->unk_00[v0].unk_3C == 0) {
-            return &Unk_021C0760->unk_00[v0];
+    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+        if (sTileManager->unk_00[v0].unk_3C == 0) {
+            return &sTileManager->unk_00[v0];
         }
     }
 
@@ -813,34 +813,34 @@ static void sub_0201F30C(void)
 
     switch (v0) {
     case GX_VRAM_OBJ_NONE:
-        Unk_021C0760->unk_14 = 0;
+        sTileManager->unk_14 = 0;
         break;
     case GX_VRAM_OBJ_16_F:
     case GX_VRAM_OBJ_16_G:
-        Unk_021C0760->unk_14 = 16 * 1024;
+        sTileManager->unk_14 = 16 * 1024;
         break;
     case GX_VRAM_OBJ_32_FG:
-        Unk_021C0760->unk_14 = 32 * 1024;
+        sTileManager->unk_14 = 32 * 1024;
         break;
     case GX_VRAM_OBJ_64_E:
-        Unk_021C0760->unk_14 = 64 * 1024;
+        sTileManager->unk_14 = 64 * 1024;
         break;
     case GX_VRAM_OBJ_80_EF:
     case GX_VRAM_OBJ_80_EG:
-        Unk_021C0760->unk_14 = 80 * 1024;
+        sTileManager->unk_14 = 80 * 1024;
         break;
     case GX_VRAM_OBJ_96_EFG:
-        Unk_021C0760->unk_14 = 96 * 1024;
+        sTileManager->unk_14 = 96 * 1024;
         break;
     case GX_VRAM_OBJ_128_A:
     case GX_VRAM_OBJ_128_B:
-        Unk_021C0760->unk_14 = 128 * 1024;
+        sTileManager->unk_14 = 128 * 1024;
         break;
     case GX_VRAM_OBJ_256_AB:
-        Unk_021C0760->unk_14 = 256 * 1024;
+        sTileManager->unk_14 = 256 * 1024;
         break;
     default:
-        Unk_021C0760->unk_14 = 0;
+        sTileManager->unk_14 = 0;
         break;
     }
 
@@ -848,54 +848,54 @@ static void sub_0201F30C(void)
 
     switch (v1) {
     case GX_VRAM_SUB_OBJ_NONE:
-        Unk_021C0760->unk_18 = 0;
+        sTileManager->unk_18 = 0;
         break;
     case GX_VRAM_SUB_OBJ_16_I:
-        Unk_021C0760->unk_18 = 16 * 1024;
+        sTileManager->unk_18 = 16 * 1024;
         break;
     case GX_VRAM_SUB_OBJ_128_D:
-        Unk_021C0760->unk_18 = 128 * 1024;
+        sTileManager->unk_18 = 128 * 1024;
         break;
     default:
-        Unk_021C0760->unk_18 = 0;
+        sTileManager->unk_18 = 0;
         break;
     }
 
-    v2 = sub_0201F764(Unk_021C0760->unk_24, Unk_021C0760->unk_2C);
-    Unk_021C0760->unk_1C = Unk_021C0760->unk_14 - v2;
+    v2 = sub_0201F764(sTileManager->unk_24, sTileManager->unk_2C);
+    sTileManager->unk_1C = sTileManager->unk_14 - v2;
 
-    v2 = sub_0201F764(Unk_021C0760->unk_28, Unk_021C0760->unk_30);
-    Unk_021C0760->unk_20 = Unk_021C0760->unk_18 - v2;
+    v2 = sub_0201F764(sTileManager->unk_28, sTileManager->unk_30);
+    sTileManager->unk_20 = sTileManager->unk_18 - v2;
 
-    GF_ASSERT((Unk_021C0760->unk_1C >= 0) && (Unk_021C0760->unk_20 >= 0));
-    GF_ASSERT((Unk_021C0760->unk_1C >= 0) && (Unk_021C0760->unk_20 >= 0));
+    GF_ASSERT((sTileManager->unk_1C >= 0) && (sTileManager->unk_20 >= 0));
+    GF_ASSERT((sTileManager->unk_1C >= 0) && (sTileManager->unk_20 >= 0));
 }
 
 void sub_0201F460(void)
 {
-    sub_0201F524(Unk_021C0760->unk_34);
-    sub_0201F524(Unk_021C0760->unk_38);
+    sub_0201F524(sTileManager->unk_34);
+    sub_0201F524(sTileManager->unk_38);
 }
 
 static void sub_0201F47C(u32 param0, u32 param1, int param2)
 {
-    Unk_021C0760->unk_24 = param0;
-    Unk_021C0760->unk_28 = param1;
+    sTileManager->unk_24 = param0;
+    sTileManager->unk_28 = param1;
 
-    if (Unk_021C0760->unk_34 != NULL) {
-        Heap_FreeToHeap(Unk_021C0760->unk_34);
+    if (sTileManager->unk_34 != NULL) {
+        Heap_FreeToHeap(sTileManager->unk_34);
     }
 
-    if (Unk_021C0760->unk_38 != NULL) {
-        Heap_FreeToHeap(Unk_021C0760->unk_38);
+    if (sTileManager->unk_38 != NULL) {
+        Heap_FreeToHeap(sTileManager->unk_38);
     }
 
-    if (Unk_021C0760->unk_24 != 0) {
-        Unk_021C0760->unk_34 = Heap_AllocFromHeap(param2, sizeof(u8) * (param0 / 8));
+    if (sTileManager->unk_24 != 0) {
+        sTileManager->unk_34 = Heap_AllocFromHeap(param2, sizeof(u8) * (param0 / 8));
     }
 
-    if (Unk_021C0760->unk_28 != 0) {
-        Unk_021C0760->unk_38 = Heap_AllocFromHeap(param2, sizeof(u8) * (param1 / 8));
+    if (sTileManager->unk_28 != 0) {
+        sTileManager->unk_38 = Heap_AllocFromHeap(param2, sizeof(u8) * (param1 / 8));
     }
 
     sub_0201F460();
@@ -904,12 +904,12 @@ static void sub_0201F47C(u32 param0, u32 param1, int param2)
 static void sub_0201F4E4(u8 *param0)
 {
     if (param0 != NULL) {
-        if (param0 == Unk_021C0760->unk_34) {
-            Unk_021C0760->unk_24 = 0;
+        if (param0 == sTileManager->unk_34) {
+            sTileManager->unk_24 = 0;
 
             Heap_FreeToHeap(param0);
         } else {
-            Unk_021C0760->unk_28 = 0;
+            sTileManager->unk_28 = 0;
             Heap_FreeToHeap(param0);
         }
 
@@ -919,11 +919,11 @@ static void sub_0201F4E4(u8 *param0)
 
 static u32 sub_0201F50C(u8 *param0)
 {
-    if (param0 == Unk_021C0760->unk_34) {
-        return Unk_021C0760->unk_24;
+    if (param0 == sTileManager->unk_34) {
+        return sTileManager->unk_24;
     }
 
-    return Unk_021C0760->unk_28;
+    return sTileManager->unk_28;
 }
 
 static void sub_0201F524(u8 *param0)
@@ -1029,17 +1029,17 @@ static void sub_0201F670(UnkStruct_0201EED4 *param0)
     u32 v1;
 
     if (param0->unk_04 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        v0 = sub_0201F754(NNS_G2dGetImageLocation(&param0->unk_10, NNS_G2D_VRAM_TYPE_2DMAIN) - Unk_021C0760->unk_1C, Unk_021C0760->unk_2C);
-        v1 = sub_0201F754(param0->unk_4C, Unk_021C0760->unk_2C);
+        v0 = sub_0201F754(NNS_G2dGetImageLocation(&param0->unk_10, NNS_G2D_VRAM_TYPE_2DMAIN) - sTileManager->unk_1C, sTileManager->unk_2C);
+        v1 = sub_0201F754(param0->unk_4C, sTileManager->unk_2C);
 
-        sub_0201F620(v0, v1, Unk_021C0760->unk_34);
+        sub_0201F620(v0, v1, sTileManager->unk_34);
     }
 
     if (param0->unk_04 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        v0 = sub_0201F754(NNS_G2dGetImageLocation(&param0->unk_10, NNS_G2D_VRAM_TYPE_2DSUB) - Unk_021C0760->unk_20, Unk_021C0760->unk_30);
-        v1 = sub_0201F754(param0->unk_50, Unk_021C0760->unk_30);
+        v0 = sub_0201F754(NNS_G2dGetImageLocation(&param0->unk_10, NNS_G2D_VRAM_TYPE_2DSUB) - sTileManager->unk_20, sTileManager->unk_30);
+        v1 = sub_0201F754(param0->unk_50, sTileManager->unk_30);
 
-        sub_0201F620(v0, v1, Unk_021C0760->unk_38);
+        sub_0201F620(v0, v1, sTileManager->unk_38);
     }
 
     param0->unk_48 = 0;
@@ -1106,20 +1106,20 @@ static BOOL sub_0201F76C(u32 param0, int param1, u32 *param2, u32 *param3)
     BOOL v0 = 1;
 
     if (param1 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        if ((Unk_021C0760->unk_0C + param0) > Unk_021C0760->unk_1C) {
+        if ((sTileManager->unk_0C + param0) > sTileManager->unk_1C) {
             GF_ASSERT(0);
             v0 = 0;
         } else {
-            *param2 = Unk_021C0760->unk_0C;
+            *param2 = sTileManager->unk_0C;
         }
     }
 
     if (param1 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        if ((Unk_021C0760->unk_10 + param0) > Unk_021C0760->unk_20) {
+        if ((sTileManager->unk_10 + param0) > sTileManager->unk_20) {
             GF_ASSERT(0);
             v0 = 0;
         } else {
-            *param3 = Unk_021C0760->unk_10;
+            *param3 = sTileManager->unk_10;
         }
     }
 
@@ -1129,13 +1129,13 @@ static BOOL sub_0201F76C(u32 param0, int param1, u32 *param2, u32 *param3)
 static void sub_0201F7BC(u32 param0, int param1)
 {
     if (param1 & NNS_G2D_VRAM_TYPE_2DMAIN) {
-        Unk_021C0760->unk_0C += param0;
-        Unk_021C0760->unk_0C = sub_0201F734(Unk_021C0760->unk_0C, Unk_021C0760->unk_2C, 1);
+        sTileManager->unk_0C += param0;
+        sTileManager->unk_0C = sub_0201F734(sTileManager->unk_0C, sTileManager->unk_2C, 1);
     }
 
     if (param1 & NNS_G2D_VRAM_TYPE_2DSUB) {
-        Unk_021C0760->unk_10 += param0;
-        Unk_021C0760->unk_10 = sub_0201F734(Unk_021C0760->unk_10, Unk_021C0760->unk_30, 1);
+        sTileManager->unk_10 += param0;
+        sTileManager->unk_10 = sub_0201F734(sTileManager->unk_10, sTileManager->unk_30, 1);
     }
 }
 

@@ -80,7 +80,7 @@
 #include "unk_0201567C.h"
 #include "unk_02018340.h"
 #include "unk_0201D670.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_020797C8.h"
 #include "unk_0207A274.h"
 #include "unk_0208694C.h"

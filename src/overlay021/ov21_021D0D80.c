@@ -72,7 +72,7 @@
 #include "unk_0201D670.h"
 #include "unk_0201DBEC.h"
 #include "unk_0201E3D8.h"
-#include "unk_0201E86C.h"
+#include "tile_manager.h"
 #include "unk_0201F834.h"
 #include "unk_0202419C.h"
 #include "unk_0202631C.h"
