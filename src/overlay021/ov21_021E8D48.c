@@ -23,7 +23,7 @@
 #include "overlay021/struct_ov21_021D4CA0.h"
 #include "overlay021/struct_ov21_021D4CB8.h"
 #include "overlay021/struct_ov21_021E8E0C.h"
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay097/struct_ov97_0222DB78.h"
 
 #include "cell_actor.h"
@@ -772,12 +772,12 @@ static Sprite *ov21_021E99E0(UnkStruct_02007768 *param0, Pokemon *param1, int pa
 
 static void ov21_021E9A0C(int param0)
 {
-    UnkStruct_ov22_022559F8 v0 = {
+    TileManagerInitParams v0 = {
         32, (1024 * 0x40), (512 * 0x20), 0
     };
 
-    v0.unk_0C = param0;
-    sub_0201E88C(&v0, GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_32K);
+    v0.heapID = param0;
+    TileManager_InitEx(&v0, GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_32K);
 }
 
 static void ov21_021E9A38(void)

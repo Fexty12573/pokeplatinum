@@ -33,7 +33,7 @@ struct UnkStruct_ov34_02256540_t {
     UnkStruct_ov25_02255958 unk_58;
     BOOL unk_6C;
     u16 unk_70[16];
-};
+};;
 
 static BOOL ov34_02256588(UnkStruct_ov34_02256540 *param0);
 static void ov34_0225667C(UnkStruct_ov25_02255224 *param0);

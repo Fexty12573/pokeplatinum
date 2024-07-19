@@ -50,7 +50,7 @@
 #include "overlay021/struct_ov21_021D4CA0.h"
 #include "overlay021/struct_ov21_021D4CB8.h"
 #include "overlay021/struct_ov21_021E68F4.h"
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 
 #include "cell_actor.h"
 #include "gx_layers.h"
@@ -1061,14 +1061,14 @@ static void ov21_021D1E94(int param0)
     sub_0200A784(0, 128, 0, 32, 0, 128, 0, 32, param0);
 
     {
-        UnkStruct_ov22_022559F8 v0 = {
+        TileManagerInitParams v0 = {
             32,
             0x14000,
             0x4000,
         };
 
-        v0.unk_0C = param0;
-        sub_0201E88C(&v0, GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_32K);
+        v0.heapID = param0;
+        TileManager_InitEx(&v0, GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_32K);
     }
 
     sub_0201F834(32, param0);

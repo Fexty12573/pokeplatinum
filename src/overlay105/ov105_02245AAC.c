@@ -3,7 +3,7 @@
 #include <nitro.h>
 #include <string.h>
 
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay105/struct_ov105_02245AAC.h"
 
 #include "cell_actor.h"
@@ -124,11 +124,11 @@ void ov105_02245C50(UnkStruct_ov105_02245AAC *param0)
 static void ov105_02245C98(void)
 {
     {
-        UnkStruct_ov22_022559F8 v0 = {
+        TileManagerInitParams v0 = {
             32, 2048, 2048, 93
         };
 
-        sub_0201E88C(&v0, GX_OBJVRAMMODE_CHAR_1D_64K, GX_OBJVRAMMODE_CHAR_1D_64K);
+        TileManager_InitEx(&v0, GX_OBJVRAMMODE_CHAR_1D_64K, GX_OBJVRAMMODE_CHAR_1D_64K);
     }
 
     sub_0201F834(8, 93);

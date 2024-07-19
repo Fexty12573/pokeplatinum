@@ -5,7 +5,7 @@
 
 #include "struct_decls/struct_02006C24_decl.h"
 
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay106/struct_ov106_02243310.h"
 
 #include "cell_actor.h"
@@ -140,11 +140,11 @@ void ov106_02243570(UnkStruct_ov106_02243310 *param0)
 static void ov106_022435C8(void)
 {
     {
-        UnkStruct_ov22_022559F8 v0 = {
+        TileManagerInitParams v0 = {
             3, 2048, 2048, 98
         };
 
-        sub_0201E88C(&v0, GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K);
+        TileManager_InitEx(&v0, GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K);
     }
 
     sub_0201F834((1 + 3), 98);

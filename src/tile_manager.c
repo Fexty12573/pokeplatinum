@@ -6,7 +6,7 @@
 #include "struct_defs/sprite_manager_allocation.h"
 #include "struct_defs/struct_0200A328.h"
 
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 
 #include "heap.h"
 #include "unk_0201DBEC.h"
@@ -29,7 +29,7 @@ typedef struct {
 
 typedef struct TileManager {
     UnkStruct_0201EED4 *unk_00;
-    int unk_04;
+    int capacity;
     int unk_08;
     u32 unk_0C;
     u32 unk_10;
@@ -82,38 +82,34 @@ static void sub_0201F818(u32 param0, u32 param1, u32 param2, int *param3, int *p
 
 static TileManager *sTileManager = NULL;
 
-void sub_0201E86C(const UnkStruct_ov22_022559F8 *param0)
+void TileManager_Init(const TileManagerInitParams *params)
 {
-    sub_0201E88C(param0, GX_GetOBJVRamModeChar(), GXS_GetOBJVRamModeChar());
+    TileManager_InitEx(params, GX_GetOBJVRamModeChar(), GXS_GetOBJVRamModeChar());
 }
 
-void sub_0201E88C(const UnkStruct_ov22_022559F8 *param0, GXOBJVRamModeChar param1, GXOBJVRamModeChar param2)
+void TileManager_InitEx(const TileManagerInitParams *params, GXOBJVRamModeChar mainTileMode, GXOBJVRamModeChar subTileMode)
 {
-    int v0;
-    int v1;
-    int v2;
-
     if (sTileManager == NULL) {
-        sTileManager = Heap_AllocFromHeap(param0->unk_0C, sizeof(TileManager));
+        sTileManager = Heap_AllocFromHeap(params->heapID, sizeof(TileManager));
         MI_CpuClear32(sTileManager, sizeof(TileManager));
 
-        sTileManager->unk_04 = param0->unk_00;
-        sTileManager->unk_00 = Heap_AllocFromHeap(param0->unk_0C, sizeof(UnkStruct_0201EED4) * sTileManager->unk_04);
+        sTileManager->capacity = params->capacity;
+        sTileManager->unk_00 = Heap_AllocFromHeap(params->heapID, sizeof(UnkStruct_0201EED4) * sTileManager->capacity);
 
-        for (v0 = 0; v0 < param0->unk_00; v0++) {
-            sub_0201EED4(sTileManager->unk_00 + v0);
+        for (int i = 0; i < params->capacity; i++) {
+            sub_0201EED4(sTileManager->unk_00 + i);
         }
 
-        sTileManager->unk_2C = sub_0201F6F4(param1);
-        sTileManager->unk_30 = sub_0201F6F4(param2);
+        sTileManager->unk_2C = sub_0201F6F4(mainTileMode);
+        sTileManager->unk_30 = sub_0201F6F4(subTileMode);
 
-        GX_SetOBJVRamModeChar(param1);
-        GXS_SetOBJVRamModeChar(param2);
+        GX_SetOBJVRamModeChar(mainTileMode);
+        GXS_SetOBJVRamModeChar(subTileMode);
 
-        v1 = sub_0201F754(param0->unk_04, sTileManager->unk_2C);
-        v2 = sub_0201F754(param0->unk_08, sTileManager->unk_30);
+        int v1 = sub_0201F754(params->unk_04, sTileManager->unk_2C);
+        int v2 = sub_0201F754(params->unk_08, sTileManager->unk_30);
 
-        sub_0201F47C(v1, v2, param0->unk_0C);
+        sub_0201F47C(v1, v2, params->heapID);
     }
 }
 
@@ -233,7 +229,7 @@ BOOL sub_0201EAD8(int param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+    for (v0 = 0; v0 < sTileManager->capacity; v0++) {
         if (sTileManager->unk_00[v0].unk_0C == param0) {
             return 1;
         }
@@ -287,7 +283,7 @@ void sub_0201EBA0(void)
 {
     int v0;
 
-    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+    for (v0 = 0; v0 < sTileManager->capacity; v0++) {
         if (sTileManager->unk_00[v0].unk_3C != 0) {
             sub_0201F024(&sTileManager->unk_00[v0]);
             sTileManager->unk_08--;
@@ -388,7 +384,7 @@ void sub_0201ED1C(const NNSG2dImageProxy *param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+    for (v0 = 0; v0 < sTileManager->capacity; v0++) {
         if ((sTileManager->unk_00[v0].unk_3C == 3) || (sTileManager->unk_00[v0].unk_3C == 4)) {
             if (&sTileManager->unk_00[v0].unk_10 == param0) {
                 break;
@@ -396,7 +392,7 @@ void sub_0201ED1C(const NNSG2dImageProxy *param0)
         }
     }
 
-    if (v0 >= sTileManager->unk_04) {
+    if (v0 >= sTileManager->capacity) {
         return;
     }
 
@@ -531,7 +527,7 @@ static UnkStruct_0201EED4 *sub_0201EF1C(const NNSG2dImageProxy *param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+    for (v0 = 0; v0 < sTileManager->capacity; v0++) {
         if (sTileManager->unk_00[v0].unk_3C != 0) {
             if (&sTileManager->unk_00[v0].unk_10 == param0) {
                 break;
@@ -539,7 +535,7 @@ static UnkStruct_0201EED4 *sub_0201EF1C(const NNSG2dImageProxy *param0)
         }
     }
 
-    if (v0 >= sTileManager->unk_04) {
+    if (v0 >= sTileManager->capacity) {
         return NULL;
     }
 
@@ -617,7 +613,7 @@ static UnkStruct_0201EED4 *sub_0201F03C(int param0)
 {
     int v0;
 
-    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+    for (v0 = 0; v0 < sTileManager->capacity; v0++) {
         if (sTileManager->unk_00[v0].unk_0C == param0) {
             return &sTileManager->unk_00[v0];
         }
@@ -794,7 +790,7 @@ static UnkStruct_0201EED4 *sub_0201F2D0(void)
 {
     int v0;
 
-    for (v0 = 0; v0 < sTileManager->unk_04; v0++) {
+    for (v0 = 0; v0 < sTileManager->capacity; v0++) {
         if (sTileManager->unk_00[v0].unk_3C == 0) {
             return &sTileManager->unk_00[v0];
         }
@@ -877,7 +873,7 @@ void sub_0201F460(void)
     sub_0201F524(sTileManager->unk_38);
 }
 
-static void sub_0201F47C(u32 param0, u32 param1, int param2)
+static void sub_0201F47C(u32 param0, u32 param1, int heapID)
 {
     sTileManager->unk_24 = param0;
     sTileManager->unk_28 = param1;
@@ -891,11 +887,11 @@ static void sub_0201F47C(u32 param0, u32 param1, int param2)
     }
 
     if (sTileManager->unk_24 != 0) {
-        sTileManager->unk_34 = Heap_AllocFromHeap(param2, sizeof(u8) * (param0 / 8));
+        sTileManager->unk_34 = Heap_AllocFromHeap(heapID, sizeof(u8) * (param0 / 8));
     }
 
     if (sTileManager->unk_28 != 0) {
-        sTileManager->unk_38 = Heap_AllocFromHeap(param2, sizeof(u8) * (param1 / 8));
+        sTileManager->unk_38 = Heap_AllocFromHeap(heapID, sizeof(u8) * (param1 / 8));
     }
 
     sub_0201F460();

@@ -12,7 +12,7 @@
 
 #include "overlay007/struct_ov7_0224F2EC.h"
 #include "overlay007/struct_ov7_0224F358.h"
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay104/struct_ov104_022412F4.h"
 #include "overlay104/struct_ov104_02241308.h"
 #include "overlay104/struct_ov104_0224133C.h"
@@ -107,14 +107,14 @@ BOOL sub_0200C73C(SpriteRenderer *param0, const UnkStruct_ov104_0224133C *param1
     }
 
     {
-        UnkStruct_ov22_022559F8 v0;
+        TileManagerInitParams v0;
 
-        v0.unk_00 = param2->unk_00;
+        v0.capacity = param2->unk_00;
         v0.unk_04 = param2->unk_04;
         v0.unk_08 = param2->unk_08;
-        v0.unk_0C = param0->unk_00;
+        v0.heapID = param0->unk_00;
 
-        sub_0201E88C(&v0, param2->unk_0C, param2->unk_10);
+        TileManager_InitEx(&v0, param2->unk_0C, param2->unk_10);
     }
 
     sub_0201F834(param3, param0->unk_00);

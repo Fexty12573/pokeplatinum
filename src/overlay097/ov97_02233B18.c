@@ -14,7 +14,7 @@
 #include "struct_defs/struct_0205AA50.h"
 #include "struct_defs/struct_02099F80.h"
 
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay077/const_ov77_021D742C.h"
 #include "overlay084/struct_ov84_0223BA5C.h"
 #include "overlay097/box_pokemon_gba.h"
@@ -497,14 +497,14 @@ static void ov97_02233DD0(UnkStruct_ov97_02234A2C *param0, UnkStruct_ov97_02233D
 static void ov97_02233F74(void)
 {
     {
-        UnkStruct_ov22_022559F8 v0 = {
+        TileManagerInitParams v0 = {
             20,
             2048,
             2048,
             78,
         };
 
-        sub_0201E86C(&v0);
+        TileManager_Init(&v0);
     }
 
     sub_0201F834(20, 78);

@@ -30,7 +30,7 @@
 #include "struct_defs/struct_0208737C.h"
 #include "struct_defs/struct_02089438.h"
 #include "struct_defs/struct_02099F80.h"
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay061/struct_ov61_0222C884.h"
 #include "overlay064/struct_ov64_022302EC.h"
 #include "overlay084/struct_ov84_0223BA5C.h"
@@ -995,12 +995,12 @@ static void ov64_0222E3D8 (UnkStruct_ov64_0222E21C * param0, u32 param1)
     sub_0200A784(0, 126, 0, 30, 0, 126, 0, 30, param1);
 
     {
-        UnkStruct_ov22_022559F8 v2 = {
+        TileManagerInitParams v2 = {
             64, 0x14000, 0, 0
         };
 
-        v2.unk_0C = param1;
-        sub_0201E88C(&v2, GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K);
+        v2.heapID = param1;
+        TileManager_InitEx(&v2, GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K);
     }
 
     sub_0201F834(64, param1);

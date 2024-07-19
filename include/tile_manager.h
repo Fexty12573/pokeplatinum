@@ -7,10 +7,15 @@
 #include "struct_defs/sprite_manager_allocation.h"
 #include "struct_defs/struct_0200A328.h"
 
-#include "overlay022/struct_ov22_022559F8.h"
+typedef struct TileManagerInitParams {
+    int capacity;
+    int unk_04;
+    int unk_08;
+    int heapID;
+} TileManagerInitParams;
 
-void sub_0201E86C(const UnkStruct_ov22_022559F8 *param0);
-void sub_0201E88C(const UnkStruct_ov22_022559F8 *param0, GXOBJVRamModeChar param1, GXOBJVRamModeChar param2);
+void TileManager_Init(const TileManagerInitParams *param0);
+void TileManager_InitEx(const TileManagerInitParams *param0, GXOBJVRamModeChar param1, GXOBJVRamModeChar param2);
 void sub_0201E958(void);
 void sub_0201E994(void);
 void sub_0201E9C0(u32 param0, u32 param1, u32 param2);

@@ -13,7 +13,7 @@
 #include "struct_defs/struct_02099F80.h"
 
 #include "overlay004/ov4_021D0D80.h"
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay066/ov66_0222DDF0.h"
 #include "overlay066/struct_ov66_02230DBC.h"
 #include "overlay084/struct_ov84_0223BA5C.h"
@@ -478,7 +478,7 @@ static const u8 Unk_ov114_022600CC[3] = {
     0x0
 };
 
-static const UnkStruct_ov22_022559F8 Unk_ov114_0226017C = {
+static const TileManagerInitParams Unk_ov114_0226017C = {
     0x0,
     0x4000,
     0x4000,
@@ -1381,12 +1381,12 @@ static void ov114_0225CFCC(UnkStruct_ov114_0225CFCC *param0, u32 param1, u32 par
     sub_0200A784(0, 126, 0, 31, 0, 126, 0, 31, param4);
 
     {
-        UnkStruct_ov22_022559F8 v1 = Unk_ov114_0226017C;
+        TileManagerInitParams v1 = Unk_ov114_0226017C;
 
-        v1.unk_00 = param2;
-        v1.unk_0C = param4;
+        v1.capacity = param2;
+        v1.heapID = param4;
 
-        sub_0201E88C(&v1, GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K);
+        TileManager_InitEx(&v1, GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K);
     }
 
     sub_0201F834(param3, param4);

@@ -16,7 +16,7 @@
 #include "struct_defs/struct_02099F80.h"
 
 #include "overlay005/struct_ov5_021DE5D0.h"
-#include "overlay022/struct_ov22_022559F8.h"
+#include "tile_manager.h"
 #include "overlay061/struct_ov61_0222C884.h"
 #include "overlay065/struct_ov65_0222F6EC.h"
 #include "overlay066/ov66_0222DDF0.h"
@@ -565,7 +565,7 @@ static const UnkStruct_ov97_0222DB78 Unk_ov70_0226D6B4[4] = {
     },
 };
 
-static const UnkStruct_ov22_022559F8 Unk_ov70_0226D5DC = {
+static const TileManagerInitParams Unk_ov70_0226D5DC = {
     0x18,
     0x8000,
     0x4000,
@@ -1317,7 +1317,7 @@ static void ov70_0225E4EC(UnkStruct_ov70_0225E4EC *param0, SaveData *param1, u32
         NNS_G2dInitOamManagerModule();
 
         sub_0200A784(0, 126, 0, 31, 0, 126, 0, 31, param2);
-        sub_0201E88C(&Unk_ov70_0226D5DC, GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_64K);
+        TileManager_InitEx(&Unk_ov70_0226D5DC, GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_64K);
         sub_0201F834(24, param2);
 
         sub_0201E994();
