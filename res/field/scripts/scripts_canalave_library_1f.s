@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -114,7 +114,7 @@ _0115:
     CallIfEq 0x8000, 3, _0175
     PlayFanfare SEQ_SE_DP_KAIDAN2
     ScrCmd_065 2
-    ScrCmd_04B 0x603
+    WaitFanfare SEQ_SE_DP_KAIDAN2
     ReleaseAll
     End
 

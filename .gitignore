@@ -30,6 +30,7 @@ cmake-build-debug/
 # For asmdiff
 */baserom.*
 *.dump
+baserom.*
 
 # For decomp.me
 ctx.c

@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -27,7 +27,7 @@ _003E:
     ScrCmd_070 100
     ScrCmd_074
     PlayFanfare SEQ_SE_DP_REGI
-    ScrCmd_04B 0x644
+    WaitFanfare SEQ_SE_DP_REGI
     ScrCmd_073
     ScrCmd_206
     ReleaseAll

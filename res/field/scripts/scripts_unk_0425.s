@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -8,7 +8,7 @@
 
 _000A:
     LockAll
-    ScrCmd_0D5 0, 0x8000
+    BufferNumber 0, 0x8000
     Message 106
     WaitABXPadPress
     CloseMessage

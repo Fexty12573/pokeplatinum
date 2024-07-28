@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -7,7 +7,7 @@
 
 _0006:
     LockAll
-    ScrCmd_069 0x8004, 0x8005
+    GetPlayerMapPos 0x8004, 0x8005
     ApplyMovement 3, _0234
     WaitMovement
     Message 0

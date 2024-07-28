@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -146,7 +146,7 @@ _0321:
     CloseMessage
     ApplyMovement 0, _0410
     WaitMovement
-    ScrCmd_04B 0x5DC
+    WaitFanfare SEQ_SE_CONFIRM
     ScrCmd_23C 0x8004, 4
     Return
 

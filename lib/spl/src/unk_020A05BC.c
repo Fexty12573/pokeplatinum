@@ -4,7 +4,7 @@
 
 #include "spl.h"
 
-VecFx16 Unk_02100DB0 = { 0, 0, FX16_ONE };
+VecFx16 Unk_02100DB0 = { 0, FX16_ONE, 0 };
 
 void sub_020A1768(SPLEmitter *emtr)
 {
@@ -249,7 +249,7 @@ void sub_020A08DC(SPLEmitter *emtr, SPLList *list)
             }
 
             if (resBase->unk_00.unk_05_4) {
-                ptcl->unk_22 = ((resBase->unk_36 - resBase->unk_34) * (u32)rng_next_s32(0x14) + (fx32)resBase->unk_34 * FX32_ONE) >> FX32_SHIFT;
+                ptcl->unk_22 = ((resBase->unk_36 - resBase->unk_34) * rng_next(0x14) + (fx32)resBase->unk_34 * FX32_ONE) >> FX32_SHIFT;
             } else {
                 ptcl->unk_22 = 0;
             }
@@ -258,7 +258,7 @@ void sub_020A08DC(SPLEmitter *emtr, SPLList *list)
             ptcl->unk_26 = 0;
 
             if (resBase->unk_00.unk_05_3 && res->unk_10->unk_08.unk_02_0) {
-                ptcl->unk_2C.unk_00 = res->unk_10->unk_00[rng_next_s32(0x14) % res->unk_10->unk_08.unk_00_0];
+                ptcl->unk_2C.unk_00 = res->unk_10->unk_00[rng_next(0x14) % res->unk_10->unk_08.unk_00_0];
             } else if (resBase->unk_00.unk_05_3 && !res->unk_10->unk_08.unk_02_0) {
                 ptcl->unk_2C.unk_00 = res->unk_10->unk_00[0];
             } else {

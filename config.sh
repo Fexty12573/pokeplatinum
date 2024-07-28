@@ -59,7 +59,7 @@ fi
 touch "$build/.mwconfig"
 export MWCONFIG="$(realpath -- "$build/.mwconfig")"
 
-if [ "$native_file" = "native_unix.ini" ]; then
+if [ "$native_file" = "native_unix.ini" ] || [ "$native_file" = "native_macos.ini" ]; then
     wrap_wine="$(command -v "${WINELOADER:-wine}")"
     wrap_path_unx="$PWD"
     wrap_path_win="$("$wrap_wine" winepath -w "$wrap_path_unx")"
@@ -81,6 +81,12 @@ elif is_wsl_accessing_windows; then
         -path_build_unx "$wrap_path_build_unx" \
         -path_build_win "$wrap_path_build_win"
 fi
+
+# Explicitly set the Response File threshold to half of Wine's limit
+# Ref: https://github.com/mesonbuild/meson/blob/8e89a38737281f7618a1284fe9e68eb6bb1fe99d/mesonbuild/backend/ninjabackend.py#L108
+# Ref: https://github.com/wine-mirror/wine/blob/34b1606019982b71818780bc84b76460f650af31/dlls/ntdll/unix/env.c#L1579
+# TODO: https://github.com/mesonbuild/meson/issues/13414
+export MESON_RSP_THRESHOLD=16387
 
 # Launch meson
 "${MESON:-meson}" setup --wrap-mode=nopromote --native-file=meson/"$native_file" --native-file="$build/root.ini" --cross-file=meson/"$cross_file" --cross-file="$build/root.ini" "$@" -- "$build"

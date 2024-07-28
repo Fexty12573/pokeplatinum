@@ -412,7 +412,7 @@ typedef struct SPLSpin {
 typedef struct SPLSimpleCollisionField {
     fx32 y;
     fx16 coeff_bounce;
-    
+
     struct {
         u16 eventtype : 2;
         u16 global : 1;
@@ -573,6 +573,12 @@ static inline u32 rng_next(u32 shift)
 static inline s32 rng_next_s32(u32 shift)
 {
     return (s32)rng_next(shift);
+}
+
+static inline s32 rng_next_even_more_s32(s32 shift)
+{
+    Unk_021C3A38 = Unk_021C3A38 * 0x5eedf715 + 0x1b0cb173;
+    return (s32)Unk_021C3A38 >> shift;
 }
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -6,7 +6,7 @@
     .short 0xFD13
 
 _0006:
-    ScrCmd_0CD 0
+    BufferPlayerName 0
     PlayFanfare SEQ_SE_CONFIRM
     LockAll
     FacePlayer

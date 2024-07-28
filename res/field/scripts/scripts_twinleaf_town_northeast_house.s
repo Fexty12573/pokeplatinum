@@ -1,4 +1,4 @@
-    .include "macros/scrcmd.inc"
+#include "macros/scrcmd.inc"
 
     .data
 
@@ -13,7 +13,7 @@ _0006:
     GoTo _0021
 
 _0021:
-    ScrCmd_0CE 0
+    BufferRivalName 0
     Message 0
     WaitABXPadPress
     CloseMessage
