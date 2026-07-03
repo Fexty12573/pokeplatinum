@@ -984,20 +984,20 @@ static void ov17_02248A24(SysTask *param0, void *param1)
         v1.heapID = HEAP_ID_22;
         v1.mode = 0;
         v1.target = 0;
-        v1.cellActorSys = v0->unk_00->unk_0C.unk_1C;
+        v1.spriteSys = v0->unk_00->unk_0C.unk_1C;
         v1.paletteSys = v0->unk_00->unk_0C.unk_44;
         v1.bgPrio = 1;
 
-        v0->ballRotation = ov12_02237728(&v1);
+        v0->PokeballAnim = PokeballAnim_New(&v1);
     }
         v0->unk_08++;
         break;
     case 2:
-        if (ov12_022377F8(v0->ballRotation) == 1) {
+        if (ov12_022377F8(v0->PokeballAnim) == 1) {
             break;
         }
     default:
-        ov12_0223783C(v0->ballRotation);
+        ov12_0223783C(v0->PokeballAnim);
         v0->unk_09 = 1;
         SysTask_Done(param0);
         return;

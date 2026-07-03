@@ -114,7 +114,7 @@ typedef struct MoveFailFlags {
 typedef struct BattleScriptTaskData {
     BattleSystem *battleSys;
     BattleContext *battleCtx;
-    BallRotation *ballRotation;
+    PokeballAnim *PokeballAnim;
     ManagedSprite *sprites[2];
     FontOAM *fontOAM;
     CharTransferAllocation charTransferAllocation;

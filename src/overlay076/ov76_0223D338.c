@@ -837,11 +837,11 @@ static BOOL ov76_0223DF94(UnkStruct_ov76_0223DE00 *param0)
                 v0.target = 0xFF;
                 v0.bgPrio = 0;
                 v0.surface = 1;
-                v0.cellActorSys = param0->unk_D4.unk_08;
+                v0.spriteSys = param0->unk_D4.unk_08;
                 v0.paletteSys = param0->unk_D4.unk_14;
                 v0.ballID = Pokemon_GetValue(param0->unk_428, MON_DATA_POKEBALL, NULL);
 
-                param0->unk_D4.unk_158 = ov12_02237728(&v0);
+                param0->unk_D4.unk_158 = PokeballAnim_New(&v0);
                 param0->unk_3DC++;
             }
             break;
@@ -924,11 +924,11 @@ static BOOL ov76_0223DF94(UnkStruct_ov76_0223DE00 *param0)
                 v5.target = 0xFF;
                 v5.bgPrio = 0;
                 v5.surface = 1;
-                v5.cellActorSys = param0->unk_D4.unk_08;
+                v5.spriteSys = param0->unk_D4.unk_08;
                 v5.paletteSys = param0->unk_D4.unk_14;
                 v5.ballID = Pokemon_GetValue(param0->unk_428, MON_DATA_POKEBALL, NULL);
 
-                param0->unk_D4.unk_158 = ov12_02237728(&v5);
+                param0->unk_D4.unk_158 = PokeballAnim_New(&v5);
 
                 ov76_0223D3A0();
                 GXLayers_EngineAToggleLayers(GX_PLANEMASK_OBJ, 1);

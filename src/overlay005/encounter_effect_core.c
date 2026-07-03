@@ -580,7 +580,7 @@ void EncounterEffect_Cave_HigherLevel(SysTask *task, void *param)
 
 typedef struct TrainerGrassEncounterEffect {
     QuadraticInterpolationTaskFX32 pokeballScale;
-    LinearInterpolationTaskS32 pokeballRotation;
+    LinearInterpolationTaskS32 pokePokeballAnim;
     QuadraticInterpolationTaskFX32 unk_2C;
     ScreenSliceEffect *screenSliceEfx;
     UnkStruct_ov5_021DE47C unk_48;
@@ -725,7 +725,7 @@ void EncounterEffect_Trainer_Grass_LowerLevel(SysTask *task, void *param)
                 trainerEffect->pokeballSprites[i], &v5);
         }
 
-        LinearInterpolationTaskS32_Init(&trainerEffect->pokeballRotation, 0, 0xffff * 1, 10);
+        LinearInterpolationTaskS32_Init(&trainerEffect->pokePokeballAnim, 0, 0xffff * 1, 10);
         encEffect->state++;
         break;
 
@@ -733,9 +733,9 @@ void EncounterEffect_Trainer_Grass_LowerLevel(SysTask *task, void *param)
         done = QuadraticInterpolationTaskFX32_Update(&trainerEffect->pokeballScale);
         v5 = VecFx32_FromXYZ(trainerEffect->pokeballScale.currentValue, trainerEffect->pokeballScale.currentValue, trainerEffect->pokeballScale.currentValue);
 
-        v6 = trainerEffect->pokeballRotation.currentValue;
+        v6 = trainerEffect->pokePokeballAnim.currentValue;
 
-        LinearInterpolationTaskS32_Update(&trainerEffect->pokeballRotation);
+        LinearInterpolationTaskS32_Update(&trainerEffect->pokePokeballAnim);
 
         for (i = 0; i < 2; i++) {
             Sprite_SetAffineScale(
@@ -743,10 +743,10 @@ void EncounterEffect_Trainer_Grass_LowerLevel(SysTask *task, void *param)
         }
 
         Sprite_SetAffineZRotation(
-            trainerEffect->pokeballSprites[0], 0xffff & trainerEffect->pokeballRotation.currentValue);
+            trainerEffect->pokeballSprites[0], 0xffff & trainerEffect->pokePokeballAnim.currentValue);
 
         Sprite_SetAffineZRotation(
-            trainerEffect->pokeballSprites[1], 0xffff & (trainerEffect->pokeballRotation.currentValue - 0x100));
+            trainerEffect->pokeballSprites[1], 0xffff & (trainerEffect->pokePokeballAnim.currentValue - 0x100));
 
         if (done == TRUE) {
             encEffect->state++;

@@ -45,7 +45,7 @@ typedef struct BattlerData {
     Window *unused_24;
     HealthBox healthbox;
     SavedCursorPosition savedCursorPos;
-    BallRotation *ballRotation;
+    PokeballAnim *PokeballAnim;
     BattleMonOBJData *btlMonObjData;
     void *unused_8C;
     u8 data[DATA_BUF_SIZE];

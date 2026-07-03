@@ -6,7 +6,7 @@
 
 typedef struct {
     UnkStruct_ov17_02247A48 *unk_00;
-    BallRotation *ballRotation;
+    PokeballAnim *PokeballAnim;
     u8 unk_08;
     u8 unk_09;
     u8 unk_0A;

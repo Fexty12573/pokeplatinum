@@ -312,7 +312,7 @@ typedef struct MonShowData {
     BattleSystem *battleSys;
     BattlerData *battlerData;
     BallCapsuleSealEffect *ballCapsuleSealEffect;
-    BallRotation *ballRotation;
+    PokeballAnim *PokeballAnim;
     BattleMonOBJData *btlMonObjData;
     PokemonSpriteTemplate spriteTemplate;
     BattleAnimSystem *battleAnimSys;
@@ -438,7 +438,7 @@ typedef struct MonReturnData {
     BattleSystem *battleSys;
     BattlerData *battlerData;
     PokemonSprite *monSprite;
-    BallRotation *ballRotation;
+    PokeballAnim *PokeballAnim;
     MoveAnimation moveAnim;
     u8 command;
     u8 battler;
@@ -2007,7 +2007,7 @@ static void Task_ShowEncounter(SysTask *task, void *data)
         monShowData->state++;
         break;
     case 2:
-        if (ov12_02237890(monShowData->battlerData->ballRotation) != 0) {
+        if (ov12_02237890(monShowData->battlerData->PokeballAnim) != 0) {
             break;
         }
 
@@ -2015,7 +2015,7 @@ static void Task_ShowEncounter(SysTask *task, void *data)
             break;
         }
 
-        if (ov12_02237810(monShowData->battlerData->ballRotation) == 1) {
+        if (ov12_02237810(monShowData->battlerData->PokeballAnim) == 1) {
             if (monShowData->battlerType == BATTLER_TYPE_PLAYER_SIDE_SLOT_2) {
                 monShowData->delay++;
 
@@ -2069,7 +2069,7 @@ static void Task_ShowEncounter(SysTask *task, void *data)
         }
         break;
     case 3:
-        if (ov12_022377F8(monShowData->battlerData->ballRotation) != 1) {
+        if (ov12_022377F8(monShowData->battlerData->PokeballAnim) != 1) {
             monShowData->state++;
         }
     case 4:
@@ -2178,8 +2178,8 @@ static void Task_ShowEncounter(SysTask *task, void *data)
     case 6:
         if (PokemonAnimManager_HasAnimCompleted(BattleSystem_GetPokemonAnimManager(monShowData->battleSys), monShowData->battler) == TRUE
             && PokemonSprite_IsAnimActive(monShowData->battlerData->monSprite) == FALSE) {
-            ov12_0223783C(monShowData->battlerData->ballRotation);
-            monShowData->battlerData->ballRotation = NULL;
+            ov12_0223783C(monShowData->battlerData->PokeballAnim);
+            monShowData->battlerData->PokeballAnim = NULL;
             ov12_02236428(monShowData->ballCapsuleSealEffect);
 
             if (monShowData->isShiny) {
@@ -2234,7 +2234,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
         ballThrow.heapID = HEAP_ID_BATTLE;
         ballThrow.target = monShowData->battler;
         ballThrow.ballID = monShowData->capturedBall;
-        ballThrow.cellActorSys = BattleSystem_GetSpriteSystem(monShowData->battleSys);
+        ballThrow.spriteSys = BattleSystem_GetSpriteSystem(monShowData->battleSys);
         ballThrow.paletteSys = BattleSystem_GetPaletteData(monShowData->battleSys);
         ballThrow.bgPrio = 1;
         ballThrow.surface = 0;
@@ -2245,7 +2245,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
             ballThrow.mode = BALL_THROW_MODE_SEND_OUT;
         }
 
-        monShowData->ballRotation = ov12_02237728(&ballThrow);
+        monShowData->PokeballAnim = PokeballAnim_New(&ballThrow);
         PokemonSpriteManager *monSpriteMan = BattleSystem_GetPokemonSpriteManager(monShowData->battleSys);
         SpriteAnimFrame animFrames[MAX_ANIMATION_FRAMES];
 
@@ -2284,7 +2284,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
         monShowData->state++;
         break;
     case 2:
-        if (ov12_02237890(monShowData->ballRotation) != 0 && monShowData->isQuickSendOut == 0) {
+        if (ov12_02237890(monShowData->PokeballAnim) != 0 && monShowData->isQuickSendOut == 0) {
             break;
         }
 
@@ -2292,7 +2292,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
             break;
         }
 
-        if (ov12_02237810(monShowData->ballRotation) == 1) {
+        if (ov12_02237810(monShowData->PokeballAnim) == 1) {
             if (monShowData->btlMonObjData) {
                 BattleMonOBJData_Free(monShowData->btlMonObjData);
             }
@@ -2312,7 +2312,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
         }
         break;
     case 3:
-        if (ov12_022377F8(monShowData->ballRotation) != 1) {
+        if (ov12_022377F8(monShowData->PokeballAnim) != 1) {
             monShowData->state++;
         }
     case 4:
@@ -2419,7 +2419,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
     case 6:
         if (PokemonAnimManager_HasAnimCompleted(BattleSystem_GetPokemonAnimManager(monShowData->battleSys), monShowData->battler) == TRUE
             && PokemonSprite_IsAnimActive(monShowData->battlerData->monSprite) == FALSE) {
-            ov12_0223783C(monShowData->ballRotation);
+            ov12_0223783C(monShowData->PokeballAnim);
             ov12_02236428(monShowData->ballCapsuleSealEffect);
 
             if (monShowData->isShiny) {
@@ -2520,11 +2520,11 @@ static void Task_ReturnPokemon(SysTask *task, void *data)
             ballThrow.mode = BALL_THROW_MODE_RECALL;
             ballThrow.target = monReturnData->battler;
             ballThrow.ballID = monReturnData->capturedBall;
-            ballThrow.cellActorSys = BattleSystem_GetSpriteSystem(monReturnData->battleSys);
+            ballThrow.spriteSys = BattleSystem_GetSpriteSystem(monReturnData->battleSys);
             ballThrow.paletteSys = BattleSystem_GetPaletteData(monReturnData->battleSys);
             ballThrow.bgPrio = 1;
             ballThrow.surface = 0;
-            monReturnData->ballRotation = ov12_02237728(&ballThrow);
+            monReturnData->PokeballAnim = PokeballAnim_New(&ballThrow);
         } else {
             BallThrow ballThrow;
             int ballThrowTypes[] = { 0, 1, 2, 3, 4, 5 };
@@ -2534,11 +2534,11 @@ static void Task_ReturnPokemon(SysTask *task, void *data)
             ballThrow.mode = BALL_THROW_MODE_RECALL;
             ballThrow.target = monReturnData->battler;
             ballThrow.ballID = monReturnData->capturedBall;
-            ballThrow.cellActorSys = BattleSystem_GetSpriteSystem(monReturnData->battleSys);
+            ballThrow.spriteSys = BattleSystem_GetSpriteSystem(monReturnData->battleSys);
             ballThrow.paletteSys = BattleSystem_GetPaletteData(monReturnData->battleSys);
             ballThrow.bgPrio = 1;
             ballThrow.surface = 0;
-            monReturnData->ballRotation = ov12_02237728(&ballThrow);
+            monReturnData->PokeballAnim = PokeballAnim_New(&ballThrow);
         }
 
         monReturnData->state = 5;
@@ -2579,8 +2579,8 @@ static void Task_ReturnPokemon(SysTask *task, void *data)
 
         break;
     case 7:
-        if (ov12_022377F8(monReturnData->ballRotation) == 0) {
-            ov12_0223783C(monReturnData->ballRotation);
+        if (ov12_022377F8(monReturnData->PokeballAnim) == 0) {
+            ov12_0223783C(monReturnData->PokeballAnim);
             monReturnData->state = 8;
         }
         break;
@@ -2874,16 +2874,16 @@ static void Task_ThrowTrainerBall(SysTask *task, void *data)
             ballThrow.heapID = HEAP_ID_BATTLE;
             ballThrow.mode = BALL_THROW_MODE_TRAINER_SEND_OUT;
             ballThrow.target = trainerThrowBallData->battler;
-            ballThrow.cellActorSys = BattleSystem_GetSpriteSystem(trainerThrowBallData->battleSys);
+            ballThrow.spriteSys = BattleSystem_GetSpriteSystem(trainerThrowBallData->battleSys);
             ballThrow.paletteSys = BattleSystem_GetPaletteData(trainerThrowBallData->battleSys);
             ballThrow.surface = 0;
             ballThrow.battleSys = trainerThrowBallData->battleSys;
 
-            trainerThrowBallData->battlerData->ballRotation = ov12_02237728(&ballThrow);
+            trainerThrowBallData->battlerData->PokeballAnim = PokeballAnim_New(&ballThrow);
 
-            ov12_02237E34(trainerThrowBallData->battlerData->ballRotation, 100);
-            ov12_02237E40(trainerThrowBallData->battlerData->ballRotation, 2);
-            ov12_02237E30(trainerThrowBallData->battlerData->ballRotation, 0);
+            ov12_02237E34(trainerThrowBallData->battlerData->PokeballAnim, 100);
+            ov12_02237E40(trainerThrowBallData->battlerData->PokeballAnim, 2);
+            ov12_02237E30(trainerThrowBallData->battlerData->PokeballAnim, 0);
 
             ManagedSprite_SetAnimationFrame(trainerThrowBallData->battlerData->managedSprite, 0);
             ManagedSprite_SetAnim(trainerThrowBallData->battlerData->managedSprite, 1);
@@ -2897,16 +2897,16 @@ static void Task_ThrowTrainerBall(SysTask *task, void *data)
             ManagedSprite_OffsetPositionXY(trainerThrowBallData->battlerData->managedSprite, 5, 0);
             ManagedSprite_GetPositionXY(trainerThrowBallData->battlerData->managedSprite, &x, &y);
 
-            if (x >= (256 - 48) - 48 && ov12_02237890(trainerThrowBallData->battlerData->ballRotation) != 0) {
-                ov12_02237E0C(trainerThrowBallData->battlerData->ballRotation, 1);
-                ov12_0223786C(trainerThrowBallData->battlerData->ballRotation, 0);
+            if (x >= (256 - 48) - 48 && ov12_02237890(trainerThrowBallData->battlerData->PokeballAnim) != 0) {
+                ov12_02237E0C(trainerThrowBallData->battlerData->PokeballAnim, 1);
+                ov12_0223786C(trainerThrowBallData->battlerData->PokeballAnim, 0);
 
                 if (battleType & BATTLE_TYPE_DOUBLES && (battleType & BATTLE_TYPE_2vs2) == 0) {
                     BattlerData *battlerData = BattleSystem_GetBattlerData(trainerThrowBallData->battleSys, BattleSystem_GetPartner(trainerThrowBallData->battleSys, trainerThrowBallData->battler));
 
-                    ov12_02237E0C(battlerData->ballRotation, 1);
-                    ov12_0223786C(battlerData->ballRotation, 0);
-                    ov12_02237E4C(battlerData->ballRotation, 12);
+                    ov12_02237E0C(battlerData->PokeballAnim, 1);
+                    ov12_0223786C(battlerData->PokeballAnim, 0);
+                    ov12_02237E4C(battlerData->PokeballAnim, 12);
                 }
             } else if (x >= (256 + 40)) {
                 SpriteManager *spriteMan = BattleSystem_GetSpriteManager(trainerThrowBallData->battleSys);
@@ -2930,24 +2930,24 @@ static void Task_ThrowTrainerBall(SysTask *task, void *data)
         ManagedSprite_OffsetPositionXY(trainerThrowBallData->battlerData->managedSprite, -5, 0);
         ManagedSprite_GetPositionXY(trainerThrowBallData->battlerData->managedSprite, &x, &y);
 
-        if (trainerThrowBallData->battlerData->ballRotation) {
+        if (trainerThrowBallData->battlerData->PokeballAnim) {
             animFrame = ManagedSprite_GetAnimationFrame(trainerThrowBallData->battlerData->managedSprite);
 
             if (v5[trainerThrowBallData->backSpriteIdx][animFrame][0] != 0x7FFF) {
-                ov12_02237E0C(trainerThrowBallData->battlerData->ballRotation, 1);
-                ov12_02237E18(trainerThrowBallData->battlerData->ballRotation, x + v5[trainerThrowBallData->backSpriteIdx][animFrame][0], y + v5[trainerThrowBallData->backSpriteIdx][animFrame][1]);
+                ov12_02237E0C(trainerThrowBallData->battlerData->PokeballAnim, 1);
+                ov12_02237E18(trainerThrowBallData->battlerData->PokeballAnim, x + v5[trainerThrowBallData->backSpriteIdx][animFrame][0], y + v5[trainerThrowBallData->backSpriteIdx][animFrame][1]);
 
-                if (animFrame == 3 && ov12_02237890(trainerThrowBallData->battlerData->ballRotation) != 0) {
-                    ov12_0223786C(trainerThrowBallData->battlerData->ballRotation, 0);
-                    ov12_02237E30(trainerThrowBallData->battlerData->ballRotation, 1);
+                if (animFrame == 3 && ov12_02237890(trainerThrowBallData->battlerData->PokeballAnim) != 0) {
+                    ov12_0223786C(trainerThrowBallData->battlerData->PokeballAnim, 0);
+                    ov12_02237E30(trainerThrowBallData->battlerData->PokeballAnim, 1);
 
                     if (battleType & BATTLE_TYPE_DOUBLES && (battleType & BATTLE_TYPE_2vs2) == 0) {
                         BattlerData *battlerData = BattleSystem_GetBattlerData(trainerThrowBallData->battleSys, BattleSystem_GetPartner(trainerThrowBallData->battleSys, trainerThrowBallData->battler));
 
-                        ov12_02237E18(battlerData->ballRotation, x + v5[trainerThrowBallData->backSpriteIdx][animFrame][0], y + v5[trainerThrowBallData->backSpriteIdx][animFrame][1]);
-                        ov12_02237E0C(battlerData->ballRotation, 1);
-                        ov12_0223786C(battlerData->ballRotation, 0);
-                        ov12_02237E30(battlerData->ballRotation, 1);
+                        ov12_02237E18(battlerData->PokeballAnim, x + v5[trainerThrowBallData->backSpriteIdx][animFrame][0], y + v5[trainerThrowBallData->backSpriteIdx][animFrame][1]);
+                        ov12_02237E0C(battlerData->PokeballAnim, 1);
+                        ov12_0223786C(battlerData->PokeballAnim, 0);
+                        ov12_02237E30(battlerData->PokeballAnim, 1);
                     }
                 }
             }
@@ -2973,14 +2973,14 @@ static void Task_ThrowTrainerBall(SysTask *task, void *data)
         if (animFrame == 4) {
             trainerThrowBallData->delay = 8;
             trainerThrowBallData->state = 4;
-        } else if (trainerThrowBallData->battlerData->ballRotation != NULL) {
+        } else if (trainerThrowBallData->battlerData->PokeballAnim != NULL) {
             if (v5[trainerThrowBallData->backSpriteIdx][animFrame][0] != 0x7FFF) {
-                ov12_02237E18(trainerThrowBallData->battlerData->ballRotation, x + v5[trainerThrowBallData->backSpriteIdx][animFrame][0], y + v5[trainerThrowBallData->backSpriteIdx][animFrame][1]);
+                ov12_02237E18(trainerThrowBallData->battlerData->PokeballAnim, x + v5[trainerThrowBallData->backSpriteIdx][animFrame][0], y + v5[trainerThrowBallData->backSpriteIdx][animFrame][1]);
 
-                if (animFrame == 3 && ov12_02237890(trainerThrowBallData->battlerData->ballRotation) != trainerThrowBallData->ballTargetState) {
-                    ov12_0223786C(trainerThrowBallData->battlerData->ballRotation, trainerThrowBallData->ballTargetState);
-                    ov12_02237E40(trainerThrowBallData->battlerData->ballRotation, 1);
-                    ov12_02237E30(trainerThrowBallData->battlerData->ballRotation, 1);
+                if (animFrame == 3 && ov12_02237890(trainerThrowBallData->battlerData->PokeballAnim) != trainerThrowBallData->ballTargetState) {
+                    ov12_0223786C(trainerThrowBallData->battlerData->PokeballAnim, trainerThrowBallData->ballTargetState);
+                    ov12_02237E40(trainerThrowBallData->battlerData->PokeballAnim, 1);
+                    ov12_02237E30(trainerThrowBallData->battlerData->PokeballAnim, 1);
 
                     if (trainerThrowBallData->ballTargetState != 3) {
                         Sound_PlayEffect(SEQ_SE_DP_NAGERU);
@@ -2999,13 +2999,13 @@ static void Task_ThrowTrainerBall(SysTask *task, void *data)
         }
         break;
     case 5:
-        if (ov12_022377F8(trainerThrowBallData->battlerData->ballRotation) == 1) {
+        if (ov12_022377F8(trainerThrowBallData->battlerData->PokeballAnim) == 1) {
             break;
         }
 
-        ov12_0223783C(trainerThrowBallData->battlerData->ballRotation);
+        ov12_0223783C(trainerThrowBallData->battlerData->PokeballAnim);
 
-        trainerThrowBallData->battlerData->ballRotation = NULL;
+        trainerThrowBallData->battlerData->PokeballAnim = NULL;
         trainerThrowBallData->state = 6;
         break;
     case 6:

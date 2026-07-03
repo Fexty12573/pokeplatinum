@@ -1,7 +1,11 @@
 #include "battle_anim/ov12_02235E94.h"
 
+#include "nitro/hw/common/lcd.h"
 #include <nitro.h>
 #include <string.h>
+
+#include "constants/battle.h"
+#include "generated/items.h"
 
 #include "struct_defs/seal_case.h"
 
@@ -24,6 +28,7 @@
 #include "sound_playback.h"
 #include "spl.h"
 #include "sprite.h"
+#include "sprite_resource.h"
 #include "sprite_system.h"
 #include "sprite_util.h"
 #include "sys_task.h"
@@ -32,6 +37,10 @@
 #include "unk_02097B18.h"
 
 #include "res/graphics/battle/sprites.naix"
+
+#define POKEBALL_ANIM_MAX_SPRITES   10
+#define POKEBALL_ANIM_MAX_RESOURCES 10
+#define POKEBALL_ANIM_BASE_RES_ID   6000
 
 typedef struct {
     int unk_00;
@@ -70,16 +79,16 @@ typedef struct UnkStruct_ov12_02236648_t {
 } UnkStruct_ov12_02236648;
 
 typedef struct {
-    s16 unk_00;
-    s16 unk_02;
-    s16 unk_04;
-    s16 unk_06;
+    s16 startX;
+    s16 startY;
+    s16 endX;
+    s16 endY;
     int unk_08;
     int unk_0C;
     int unk_10;
 } UnkStruct_ov12_02237C54_sub1;
 
-typedef struct BallRotation {
+typedef struct PokeballAnim {
     int unk_00;
     int unk_04;
     int unk_08;
@@ -87,39 +96,39 @@ typedef struct BallRotation {
     int unk_10;
     int unk_14;
     int unk_18;
-    BOOL unk_1C;
+    BOOL active;
     u8 unk_20;
     u8 unk_21;
-    s8 unk_22;
-    BOOL unk_24;
+    s8 unused;
+    BOOL animate;
     BOOL unk_28;
-    SpriteManager *unk_2C;
-    ManagedSprite *unk_30;
+    SpriteManager *spriteMan;
+    ManagedSprite *sprite;
     ValueLerpContext unk_34;
     XYTransformContext unk_48[2];
-    BallThrow unk_90;
+    BallThrow ballThrow;
     UnkStruct_ov12_02237C54_sub1 unk_B8;
     SysTask *unk_CC;
     UnkStruct_ov12_02236648 *unk_D0;
     PaletteFadeContext *unk_D4;
     BattleMonOBJData *unk_D8;
-    int unk_DC;
-} BallRotation;
+    int pauseTimer;
+} PokeballAnim;
 
 static void ov12_022363CC(SysTask *param0, void *param1);
 static void ov12_0223646C(BallCapsuleSealEffect *ballCapSealEff, SPLEmitterCallback param1);
 static void ov12_02236598(SPLEmitter *param0);
 static void ov12_022365D4(SPLEmitter *param0);
-static void ov12_02237C54(BallRotation *param0);
-static void ov12_02237D8C(BallRotation *param0);
-static void ov12_022378A0(BallRotation *param0);
-static void ov12_02237B14(BallRotation *param0, s16 *param1, s16 *param2);
-static BOOL ov12_02236F24(BallRotation *param0);
-static BOOL ov12_022371E4(BallRotation *param0);
-static BOOL ov12_02237608(BallRotation *param0);
-static BOOL ov12_02236F10(BallRotation *param0);
-static BOOL ov12_02237694(BallRotation *param0);
-static BOOL ov12_02237474(BallRotation *param0);
+static void PokeballAnim_LoadResources(PokeballAnim *param0);
+static void PokeballAnim_CreateSprite(PokeballAnim *param0);
+static void ov12_022378A0(PokeballAnim *param0);
+static void PokeballAnim_GetBallStartPosition(PokeballAnim *param0, s16 *param1, s16 *param2);
+static BOOL ov12_02236F24(PokeballAnim *param0);
+static BOOL ov12_022371E4(PokeballAnim *param0);
+static BOOL ov12_02237608(PokeballAnim *param0);
+static BOOL ov12_02236F10(PokeballAnim *param0);
+static BOOL ov12_02237694(PokeballAnim *param0);
+static BOOL ov12_02237474(PokeballAnim *param0);
 
 // clang-format off
 static const int sBallThrowGraphics[][4] = {
@@ -192,19 +201,19 @@ static const int Unk_ov12_0223AE10[][3] = {
     { 0x24, 0xFF, 0x2 }
 };
 
-static int ov12_02235E94(int param0)
+static int ConvertItemIDToResourceIndex(enum Item item)
 {
-    int v0;
+    enum Item converted;
 
-    if ((param0 < 1) || (param0 > (0xFF + 20))) {
-        v0 = 4;
-    } else if (param0 >= 0xFF) {
-        v0 = param0 - 0xFF;
+    if (item < ITEM_MASTER_BALL || (item > ITEM_FOCUS_SASH)) {
+        converted = ITEM_POKE_BALL;
+    } else if (item >= ITEM_LAX_INCENSE) {
+        converted = item - ITEM_LAX_INCENSE;
     } else {
-        v0 = param0;
+        converted = item;
     }
 
-    return v0 - 1;
+    return converted - ITEM_MASTER_BALL;
 }
 
 static BOOL ov12_02235EB0(int param0)
@@ -266,64 +275,62 @@ static BOOL ov12_02235EF0(int param0)
     return v1;
 }
 
-static BOOL ov12_02235F2C(int param0)
+static BOOL ShouldAnimatePokeball(enum BallThrowType throwType)
 {
-    int v0;
-    BOOL v1;
-    int v2[] = {
-        3,
-        5,
-        1,
+    enum BallThrowType throwTypes[] = {
+        BALL_THROW_TYPE_ENEMY_SLOT_1,
+        BALL_THROW_TYPE_ENEMY_SLOT_2,
+        BALL_THROW_TYPE_SOLO_ENEMY,
     };
 
-    v1 = 1;
+    BOOL animate = TRUE;
 
-    for (v0 = 0; v0 < NELEMS(v2); v0++) {
-        if (v2[v0] != param0) {
+    for (int i = 0; i < NELEMS(throwTypes); i++) {
+        if (throwTypes[i] != throwType) {
             continue;
         }
 
-        v1 = 0;
+        animate = FALSE;
         break;
     }
 
-    return v1;
+    return animate;
 }
 
 static int ov12_02235F64(int param0)
 {
-    int v0 = ov12_02235E94(param0);
+    int v0 = ConvertItemIDToResourceIndex(param0);
     return Unk_ov12_0223AD70[v0][0];
 }
 
 static int ov12_02235F78(int param0)
 {
-    int v0 = ov12_02235E94(param0);
+    int v0 = ConvertItemIDToResourceIndex(param0);
     return Unk_ov12_0223AD70[v0][1];
 }
 
 static int ov12_02235F8C(int param0)
 {
-    int v0 = ov12_02235E94(param0);
+    int v0 = ConvertItemIDToResourceIndex(param0);
     return Unk_ov12_0223AE10[v0][0];
 }
 
 static int ov12_02235FA0(int param0)
 {
-    int v0 = ov12_02235E94(param0);
+    int v0 = ConvertItemIDToResourceIndex(param0);
     return Unk_ov12_0223AE10[v0][2];
 }
 
 static int ov12_02235FB4(int param0)
 {
-    int v0 = ov12_02235E94(param0);
+    int v0 = ConvertItemIDToResourceIndex(param0);
     return Unk_ov12_0223AE10[v0][1];
 }
 
-static int ov12_02235FC8(int param0, int param1)
+static int GetPokeballGraphics(enum Item item, enum SpriteResourceType type)
 {
-    int v0 = ov12_02235E94(param0);
-    return sBallThrowGraphics[v0][param1];
+    int index = ConvertItemIDToResourceIndex(item);
+    return sBallThrowGraphics[index][type];
 }
 
 BallCapsuleSealEffect *ov12_02235FE0(enum HeapID heapID)
@@ -886,16 +893,16 @@ void ov12_02236780(UnkStruct_ov12_02236648 *param0)
     Heap_Free(param0);
 }
 
-static BOOL (*const Unk_ov12_0223AB84[])(BallRotation *) = {
-    ov12_02236F24,
-    ov12_022371E4,
-    ov12_02237608,
-    ov12_02236F10,
-    ov12_02237694,
-    ov12_02237474
+static BOOL (*const sBallThrowTaskFuncs[])(PokeballAnim *) = {
+    [BALL_THROW_MODE_SEND_OUT] = ov12_02236F24,
+    [BALL_THROW_MODE_SEND_OUT_QUICK] = ov12_022371E4,
+    [BALL_THROW_MODE_UNUSED] = ov12_02237608,
+    [BALL_THROW_MODE_THROW] = ov12_02236F10,
+    [BALL_THROW_MODE_TRAINER_SEND_OUT] = ov12_02237694,
+    [BALL_THROW_MODE_RECALL] = ov12_02237474
 };
 
-static BOOL ov12_02236788(BallRotation *param0)
+static BOOL ov12_02236788(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -913,7 +920,7 @@ static BOOL ov12_02236788(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_022367B0(BallRotation *param0)
+static BOOL ov12_022367B0(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -931,7 +938,7 @@ static BOOL ov12_022367B0(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_022367D8(BallRotation *param0)
+static BOOL ov12_022367D8(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -949,7 +956,7 @@ static BOOL ov12_022367D8(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236800(BallRotation *param0)
+static BOOL ov12_02236800(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -967,7 +974,7 @@ static BOOL ov12_02236800(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236828(BallRotation *param0)
+static BOOL ov12_02236828(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -985,7 +992,7 @@ static BOOL ov12_02236828(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236850(BallRotation *param0)
+static BOOL ov12_02236850(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -1003,7 +1010,7 @@ static BOOL ov12_02236850(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236878(BallRotation *param0)
+static BOOL ov12_02236878(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -1021,7 +1028,7 @@ static BOOL ov12_02236878(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_022368A0(BallRotation *param0)
+static BOOL ov12_022368A0(PokeballAnim *param0)
 {
     BOOL v0;
 
@@ -1039,7 +1046,7 @@ static BOOL ov12_022368A0(BallRotation *param0)
     return 1;
 }
 
-static BOOL (*const Unk_ov12_0223AB9C[])(BallRotation *) = {
+static BOOL (*const Unk_ov12_0223AB9C[])(PokeballAnim *) = {
     ov12_02236788,
     ov12_022367B0,
     ov12_022367D8,
@@ -1050,19 +1057,19 @@ static BOOL (*const Unk_ov12_0223AB9C[])(BallRotation *) = {
     ov12_022368A0
 };
 
-void ov12_022368C8(BallRotation *param0, int param1)
+void ov12_022368C8(PokeballAnim *param0, int param1)
 {
     param0->unk_00 = param1;
     param0->unk_04 = 0;
 }
 
-BOOL ov12_022368D0(BallRotation *param0, int param1)
+BOOL ov12_022368D0(PokeballAnim *param0, int param1)
 {
     BOOL v0 = Unk_ov12_0223AB9C[param0->unk_00](param0);
     return v0;
 }
 
-static void ov12_022368E4(BallRotation *param0, int param1)
+static void ov12_022368E4(PokeballAnim *param0, int param1)
 {
     param0->unk_14 = param1;
     param0->unk_08 = 0;
@@ -1070,12 +1077,12 @@ static void ov12_022368E4(BallRotation *param0, int param1)
     param0->unk_10 = 0;
 }
 
-static BOOL ov12_022368F0(BallRotation *param0)
+static BOOL ov12_022368F0(PokeballAnim *param0)
 {
     return 1;
 }
 
-static BOOL ov12_022368F4(BallRotation *param0)
+static BOOL ov12_022368F4(PokeballAnim *param0)
 {
     BOOL v0 = ov12_02236F24(param0);
 
@@ -1086,37 +1093,37 @@ static BOOL ov12_022368F4(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_0223690C(BallRotation *param0)
+static BOOL ov12_0223690C(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 3);
     return 1;
 }
 
-static BOOL ov12_02236918(BallRotation *param0)
+static BOOL ov12_02236918(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
-        ManagedSprite_SetAnim(param0->unk_30, 1);
+        ManagedSprite_SetAnim(param0->sprite, 1);
         {
             UnkStruct_ov12_02236690 v0;
 
-            v0.unk_04 = param0->unk_90.ballID;
-            v0.heapID = param0->unk_90.heapID;
+            v0.unk_04 = param0->ballThrow.ballID;
+            v0.heapID = param0->ballThrow.heapID;
             v0.unk_0C = 0xFF;
             v0.unk_10 = 0;
 
-            ManagedSprite_GetPositionXY(param0->unk_30, &v0.unk_00, &v0.unk_02);
+            ManagedSprite_GetPositionXY(param0->sprite, &v0.unk_00, &v0.unk_02);
 
-            param0->unk_D8 = BattleMonOBJData_NewAll(param0->unk_90.battleSys, param0->unk_90.heapID);
+            param0->unk_D8 = BattleMonOBJData_NewAll(param0->ballThrow.battleSys, param0->ballThrow.heapID);
             param0->unk_D0 = ov12_02236690(&v0);
         }
         param0->unk_08++;
         break;
     case 1: {
-        int v1 = ManagedSprite_GetAnimationFrame(param0->unk_30);
+        int v1 = ManagedSprite_GetAnimationFrame(param0->sprite);
 
         if (v1 >= 2) {
-            param0->unk_24 = 0;
+            param0->animate = 0;
             param0->unk_08++;
         }
     } break;
@@ -1127,7 +1134,7 @@ static BOOL ov12_02236918(BallRotation *param0)
         break;
     case 3: {
         if (ov12_02236764(param0->unk_D0) == 0) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, 0);
+            ManagedSprite_SetAnimationFrame(param0->sprite, 0);
             ov12_02236780(param0->unk_D0);
             param0->unk_08++;
         }
@@ -1140,20 +1147,20 @@ static BOOL ov12_02236918(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_022369F8(BallRotation *param0)
+static BOOL ov12_022369F8(PokeballAnim *param0)
 {
     return 1;
 }
 
-static BOOL ov12_022369FC(BallRotation *param0)
+static BOOL ov12_022369FC(PokeballAnim *param0)
 {
     BOOL v0;
 
     switch (param0->unk_0C) {
     case 0:
-        ManagedSprite_GetPositionXY(param0->unk_30, &param0->unk_B8.unk_00, &param0->unk_B8.unk_02);
-        param0->unk_B8.unk_04 = 60;
-        param0->unk_B8.unk_06 = 180;
+        ManagedSprite_GetPositionXY(param0->sprite, &param0->unk_B8.startX, &param0->unk_B8.startY);
+        param0->unk_B8.endX = 60;
+        param0->unk_B8.endY = 180;
         param0->unk_B8.unk_08 = 10;
         param0->unk_B8.unk_10 = 12;
         param0->unk_0C++;
@@ -1170,24 +1177,24 @@ static BOOL ov12_022369FC(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236A50(BallRotation *param0)
+static BOOL ov12_02236A50(PokeballAnim *param0)
 {
     return 1;
 }
 
-static BOOL ov12_02236A54(BallRotation *param0)
+static BOOL ov12_02236A54(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 8);
     return 1;
 }
 
-static BOOL ov12_02236A60(BallRotation *param0)
+static BOOL ov12_02236A60(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 9);
     return 1;
 }
 
-static BOOL ov12_02236A6C(BallRotation *param0)
+static BOOL ov12_02236A6C(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
@@ -1195,27 +1202,27 @@ static BOOL ov12_02236A6C(BallRotation *param0)
     {
         int v0;
 
-        v0 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-        PaletteData_StartFade(param0->unk_90.paletteSys, 0x4, 1 << v0, -1, 0, 12, 0x37F);
+        v0 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+        PaletteData_StartFade(param0->ballThrow.paletteSys, 0x4, 1 << v0, -1, 0, 12, 0x37F);
 
         param0->unk_08++;
     } break;
     case 1:
-        if (PaletteData_GetSelectedBuffersMask(param0->unk_90.paletteSys) != 0) {
+        if (PaletteData_GetSelectedBuffersMask(param0->ballThrow.paletteSys) != 0) {
             break;
         }
 
         {
             int v1;
 
-            v1 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-            PaletteData_StartFade(param0->unk_90.paletteSys, 0x4, 1 << v1, -1, 12, 0, 0x37F);
+            v1 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+            PaletteData_StartFade(param0->ballThrow.paletteSys, 0x4, 1 << v1, -1, 12, 0, 0x37F);
         }
 
         param0->unk_08++;
         break;
     default:
-        if (PaletteData_GetSelectedBuffersMask(param0->unk_90.paletteSys) != 0) {
+        if (PaletteData_GetSelectedBuffersMask(param0->ballThrow.paletteSys) != 0) {
             break;
         }
 
@@ -1226,13 +1233,13 @@ static BOOL ov12_02236A6C(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236B14(BallRotation *param0)
+static BOOL ov12_02236B14(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 11);
     return 1;
 }
 
-static BOOL ov12_02236B20(BallRotation *param0)
+static BOOL ov12_02236B20(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
@@ -1243,14 +1250,14 @@ static BOOL ov12_02236B20(BallRotation *param0)
         {
             s16 v0, v1;
 
-            ManagedSprite_GetPositionXY(param0->unk_30, &v0, &v1);
+            ManagedSprite_GetPositionXY(param0->sprite, &v0, &v1);
             PosLerpContext_Init(&param0->unk_48[0], v0, v0, v1, v1 + 32, 32 / 3);
 
             param0->unk_08++;
         }
         break;
     case 1:
-        if (PosLerpContext_UpdateAndApplyToSprite(&param0->unk_48[0], param0->unk_30) == 0) {
+        if (PosLerpContext_UpdateAndApplyToSprite(&param0->unk_48[0], param0->sprite) == 0) {
             param0->unk_08++;
 
             ov12_022368E4(param0, 13);
@@ -1263,7 +1270,7 @@ static BOOL ov12_02236B20(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236B94(BallRotation *param0)
+static BOOL ov12_02236B94(PokeballAnim *param0)
 {
     return 1;
 }
@@ -1300,12 +1307,12 @@ static const int Unk_ov12_0223ABE4[][2] = {
     { 0x14, SEQ_SE_DP_KON4 }
 };
 
-static BOOL ov12_02236B98(BallRotation *param0)
+static BOOL ov12_02236B98(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
-        ManagedSprite_SetAnim(param0->unk_30, 1);
-        ManagedSprite_SetAnimationFrame(param0->unk_30, 0);
+        ManagedSprite_SetAnim(param0->sprite, 1);
+        ManagedSprite_SetAnimationFrame(param0->sprite, 0);
         param0->unk_08++;
     case 1: {
         s16 v0, v1;
@@ -1315,7 +1322,7 @@ static BOOL ov12_02236B98(BallRotation *param0)
         v1 = Unk_ov12_0223ACF0[param0->unk_0C][1];
         v2 = Unk_ov12_0223ACF0[param0->unk_0C][2];
 
-        ManagedSprite_SetAnimationFrame(param0->unk_30, v2);
+        ManagedSprite_SetAnimationFrame(param0->sprite, v2);
 
         param0->unk_0C++;
 
@@ -1332,7 +1339,7 @@ static BOOL ov12_02236B98(BallRotation *param0)
         if ((param0->unk_0C > 20) || (v0 == 0xFF) || (v1 == 0xFF)) {
             param0->unk_08++;
         } else {
-            ManagedSprite_OffsetPositionXY(param0->unk_30, v0, v1);
+            ManagedSprite_OffsetPositionXY(param0->sprite, v0, v1);
         }
     } break;
     default:
@@ -1343,12 +1350,12 @@ static BOOL ov12_02236B98(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236C34(BallRotation *param0)
+static BOOL ov12_02236C34(PokeballAnim *param0)
 {
     return 1;
 }
 
-static BOOL ov12_02236C38(BallRotation *param0)
+static BOOL ov12_02236C38(PokeballAnim *param0)
 {
     param0->unk_0C++;
 
@@ -1361,7 +1368,7 @@ static BOOL ov12_02236C38(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236C58(BallRotation *param0)
+static BOOL ov12_02236C58(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 17);
     return 1;
@@ -1373,7 +1380,7 @@ static const s16 Unk_ov12_0223AC38[][12] = {
     { -1, 0x0, 0x1, 0x1, 0x0, -1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xFF }
 };
 
-static BOOL ov12_02236C64(BallRotation *param0)
+static BOOL ov12_02236C64(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
@@ -1388,7 +1395,7 @@ static BOOL ov12_02236C64(BallRotation *param0)
         if ((param0->unk_0C > 11) || (v0 == 0xFF)) {
             param0->unk_08++;
             param0->unk_18++;
-            ManagedSprite_SetAffineZRotation(param0->unk_30, 0);
+            ManagedSprite_SetAffineZRotation(param0->sprite, 0);
             ov12_022368E4(param0, 18);
             return 1;
         } else {
@@ -1396,8 +1403,8 @@ static BOOL ov12_02236C64(BallRotation *param0)
                 Sound_PlayPannedEffect(SEQ_SE_DP_BOWA, 117);
             }
 
-            ManagedSprite_OffsetPositionXY(param0->unk_30, v0, 0);
-            ManagedSprite_OffsetAffineZRotation(param0->unk_30, (((v0) * 2) * 0xffff) / 360);
+            ManagedSprite_OffsetPositionXY(param0->sprite, v0, 0);
+            ManagedSprite_OffsetAffineZRotation(param0->sprite, (((v0) * 2) * 0xffff) / 360);
         }
     } break;
     default:
@@ -1407,24 +1414,24 @@ static BOOL ov12_02236C64(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236CFC(BallRotation *param0)
+static BOOL ov12_02236CFC(PokeballAnim *param0)
 {
     return 1;
 }
 
-static BOOL ov12_02236D00(BallRotation *param0)
+static BOOL ov12_02236D00(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 20);
     return 1;
 }
 
-static BOOL ov12_02236D0C(BallRotation *param0)
+static BOOL ov12_02236D0C(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 27);
     return 1;
 }
 
-static BOOL ov12_02236D18(BallRotation *param0)
+static BOOL ov12_02236D18(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
@@ -1432,25 +1439,25 @@ static BOOL ov12_02236D18(BallRotation *param0)
     {
         int v0;
 
-        v0 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-        PaletteData_StartFade(param0->unk_90.paletteSys, 0x4, 1 << v0, -5, 0, 10, 0x0);
+        v0 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+        PaletteData_StartFade(param0->ballThrow.paletteSys, 0x4, 1 << v0, -5, 0, 10, 0x0);
 
         param0->unk_08++;
     } break;
     case 1:
-        if (PaletteData_GetSelectedBuffersMask(param0->unk_90.paletteSys) != 0) {
+        if (PaletteData_GetSelectedBuffersMask(param0->ballThrow.paletteSys) != 0) {
             break;
         }
 
         {
             UnkStruct_ov12_02236690 v1;
 
-            v1.unk_04 = param0->unk_90.ballID;
-            v1.heapID = param0->unk_90.heapID;
+            v1.unk_04 = param0->ballThrow.ballID;
+            v1.heapID = param0->ballThrow.heapID;
             v1.unk_0C = ov12_02235FB4(v1.unk_04);
             v1.unk_10 = 0;
 
-            ManagedSprite_GetPositionXY(param0->unk_30, &v1.unk_00, &v1.unk_02);
+            ManagedSprite_GetPositionXY(param0->sprite, &v1.unk_00, &v1.unk_02);
             param0->unk_D0 = ov12_02236690(&v1);
         }
         param0->unk_08++;
@@ -1461,13 +1468,13 @@ static BOOL ov12_02236D18(BallRotation *param0)
         break;
     case 3: {
         if (ov12_02236764(param0->unk_D0) == 0) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, 0);
+            ManagedSprite_SetAnimationFrame(param0->sprite, 0);
             ov12_02236780(param0->unk_D0);
             param0->unk_08++;
         }
     } break;
     default:
-        if (PaletteData_GetSelectedBuffersMask(param0->unk_90.paletteSys) != 0) {
+        if (PaletteData_GetSelectedBuffersMask(param0->ballThrow.paletteSys) != 0) {
             break;
         }
 
@@ -1478,24 +1485,24 @@ static BOOL ov12_02236D18(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236E08(BallRotation *param0)
+static BOOL ov12_02236E08(PokeballAnim *param0)
 {
     return 1;
 }
 
-static BOOL ov12_02236E0C(BallRotation *param0)
+static BOOL ov12_02236E0C(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0: {
         int v0;
 
-        v0 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-        PaletteData_StartFade(param0->unk_90.paletteSys, 0x4, 1 << v0, -5, 10, 0, 0x0);
+        v0 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+        PaletteData_StartFade(param0->ballThrow.paletteSys, 0x4, 1 << v0, -5, 10, 0, 0x0);
     }
         param0->unk_08++;
         break;
     case 1:
-        if (PaletteData_GetSelectedBuffersMask(param0->unk_90.paletteSys) != 0) {
+        if (PaletteData_GetSelectedBuffersMask(param0->ballThrow.paletteSys) != 0) {
             break;
         }
 
@@ -1509,17 +1516,17 @@ static BOOL ov12_02236E0C(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236E70(BallRotation *param0)
+static BOOL ov12_02236E70(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 25);
     return 1;
 }
 
-static BOOL ov12_02236E7C(BallRotation *param0)
+static BOOL ov12_02236E7C(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
-        ManagedSprite_SetExplicitOamMode(param0->unk_30, GX_OAM_MODE_XLU);
+        ManagedSprite_SetExplicitOamMode(param0->sprite, GX_OAM_MODE_XLU);
         param0->unk_08++;
     case 1:
         if (param0->unk_20 > 0) {
@@ -1528,7 +1535,7 @@ static BOOL ov12_02236E7C(BallRotation *param0)
         } else {
             param0->unk_20 = 0;
             param0->unk_21 = 15;
-            ManagedSprite_SetDrawFlag(param0->unk_30, 0);
+            ManagedSprite_SetDrawFlag(param0->sprite, 0);
             param0->unk_08++;
         }
 
@@ -1542,18 +1549,18 @@ static BOOL ov12_02236E7C(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02236F00(BallRotation *param0)
+static BOOL ov12_02236F00(PokeballAnim *param0)
 {
     ov12_022368E4(param0, 27);
     return 1;
 }
 
-static BOOL ov12_02236F0C(BallRotation *param0)
+static BOOL ov12_02236F0C(PokeballAnim *param0)
 {
     return 0;
 }
 
-static BOOL (*const Unk_ov12_0223AC80[])(BallRotation *) = {
+static BOOL (*const Unk_ov12_0223AC80[])(PokeballAnim *) = {
     ov12_022368F0,
     ov12_022368F4,
     ov12_0223690C,
@@ -1584,17 +1591,17 @@ static BOOL (*const Unk_ov12_0223AC80[])(BallRotation *) = {
     ov12_02236F0C
 };
 
-static BOOL ov12_02236F10(BallRotation *param0)
+static BOOL ov12_02236F10(PokeballAnim *param0)
 {
     BOOL v0 = Unk_ov12_0223AC80[param0->unk_14](param0);
     return v0;
 }
 
-static BOOL ov12_02236F24(BallRotation *param0)
+static BOOL ov12_02236F24(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
-        XYTransformContext_InitParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->unk_B8.unk_00, param0->unk_B8.unk_04, param0->unk_B8.unk_02, param0->unk_B8.unk_06, param0->unk_B8.unk_08, param0->unk_B8.unk_10 * FX32_ONE);
+        XYTransformContext_InitParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->unk_B8.startX, param0->unk_B8.endX, param0->unk_B8.startY, param0->unk_B8.endY, param0->unk_B8.unk_08, param0->unk_B8.unk_10 * FX32_ONE);
 
         param0->unk_B8.unk_0C = 0;
         param0->unk_08++;
@@ -1603,46 +1610,46 @@ static BOOL ov12_02236F24(BallRotation *param0)
         {
             int v0;
 
-            if (ov12_02235EB0(param0->unk_90.type) == 1) {
+            if (ov12_02235EB0(param0->ballThrow.type) == 1) {
                 v0 = (LCRNG_Next() % 20) + 10;
 
-                ManagedSprite_OffsetAffineZRotation(param0->unk_30, 0x2000 * v0);
+                ManagedSprite_OffsetAffineZRotation(param0->sprite, 0x2000 * v0);
             }
         }
         break;
     case 1:
-        if (ov12_02235EB0(param0->unk_90.type) == 1) {
-            ManagedSprite_OffsetAffineZRotation(param0->unk_30, 0x2000);
+        if (ov12_02235EB0(param0->ballThrow.type) == 1) {
+            ManagedSprite_OffsetAffineZRotation(param0->sprite, 0x2000);
 
             if (param0->unk_B8.unk_0C > ((param0->unk_B8.unk_08 / 2) + 10)) {
-                ManagedSprite_OffsetAffineZRotation(param0->unk_30, 0x2000);
+                ManagedSprite_OffsetAffineZRotation(param0->sprite, 0x2000);
             }
 
-            if (ov12_02235EF0(param0->unk_90.type) == 1) {
+            if (ov12_02235EF0(param0->ballThrow.type) == 1) {
                 if (param0->unk_B8.unk_0C == ((param0->unk_B8.unk_08 / 2) + 10)) {
                     int v1;
 
-                    v1 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-                    param0->unk_D4 = PaletteFadeContext_New(param0->unk_90.paletteSys, param0->unk_90.heapID, 2, v1 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
+                    v1 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+                    param0->unk_D4 = PaletteFadeContext_New(param0->ballThrow.paletteSys, param0->ballThrow.heapID, 2, v1 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
                 }
             }
         }
 
         param0->unk_B8.unk_0C++;
 
-        if ((param0->unk_90.type >= 6) && (param0->unk_90.type <= 8)) {
+        if ((param0->ballThrow.type >= 6) && (param0->ballThrow.type <= 8)) {
             if ((param0->unk_B8.unk_0C > (param0->unk_B8.unk_08 / 2)) && (param0->unk_B8.unk_0C < ((param0->unk_B8.unk_08 / 2) + 5))) {
                 break;
             }
         }
 
-        if (XYTransformContext_UpdateAndApplyParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->unk_30) == 0) {
+        if (XYTransformContext_UpdateAndApplyParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->sprite) == 0) {
             ov12_02237E24(param0, 0);
             param0->unk_08++;
         }
         break;
     case 2:
-        if ((ov12_02235EF0(param0->unk_90.type) == 1) && (param0->unk_D4 != NULL)) {
+        if ((ov12_02235EF0(param0->ballThrow.type) == 1) && (param0->unk_D4 != NULL)) {
             if (PaletteFadeContext_IsActive(param0->unk_D4) == 1) {
                 break;
             }
@@ -1652,12 +1659,12 @@ static BOOL ov12_02236F24(BallRotation *param0)
 
             return 0;
         } else {
-            if (param0->unk_90.type >= 15) {
+            if (param0->ballThrow.type >= 15) {
                 param0->unk_28 = 1;
                 return 0;
             }
 
-            if (param0->unk_90.ballID == (0xFF + 18)) {
+            if (param0->ballThrow.ballID == (0xFF + 18)) {
                 Sound_PlayPannedEffect(SEQ_SE_DP_W202B, 117);
             }
 
@@ -1665,7 +1672,7 @@ static BOOL ov12_02236F24(BallRotation *param0)
         }
         break;
     case 3:
-        ManagedSprite_SetAnim(param0->unk_30, 1);
+        ManagedSprite_SetAnim(param0->sprite, 1);
         ov12_02237E30(param0, 1);
         param0->unk_B8.unk_0C = 0;
         param0->unk_08++;
@@ -1675,9 +1682,9 @@ static BOOL ov12_02236F24(BallRotation *param0)
             {
                 int v2;
 
-                if ((param0->unk_90.type != 12) && (param0->unk_90.type != 13)) {
-                    v2 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-                    param0->unk_D4 = PaletteFadeContext_New(param0->unk_90.paletteSys, param0->unk_90.heapID, 2, v2 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
+                if ((param0->ballThrow.type != 12) && (param0->ballThrow.type != 13)) {
+                    v2 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+                    param0->unk_D4 = PaletteFadeContext_New(param0->ballThrow.paletteSys, param0->ballThrow.heapID, 2, v2 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
                 }
             }
             param0->unk_28 = 1;
@@ -1687,7 +1694,7 @@ static BOOL ov12_02236F24(BallRotation *param0)
             break;
         }
 
-        if ((param0->unk_90.type != 12) && (param0->unk_90.type != 13)) {
+        if ((param0->ballThrow.type != 12) && (param0->ballThrow.type != 13)) {
             if (PaletteFadeContext_IsActive(param0->unk_D4) == 1) {
                 break;
             }
@@ -1701,11 +1708,11 @@ static BOOL ov12_02236F24(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_022371E4(BallRotation *param0)
+static BOOL ov12_022371E4(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
-        XYTransformContext_InitParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->unk_B8.unk_00, param0->unk_B8.unk_04, param0->unk_B8.unk_02, param0->unk_B8.unk_06, param0->unk_B8.unk_08, param0->unk_B8.unk_10 * FX32_ONE);
+        XYTransformContext_InitParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->unk_B8.startX, param0->unk_B8.endX, param0->unk_B8.startY, param0->unk_B8.endY, param0->unk_B8.unk_08, param0->unk_B8.unk_10 * FX32_ONE);
 
         param0->unk_B8.unk_0C = 0;
         param0->unk_08++;
@@ -1714,46 +1721,46 @@ static BOOL ov12_022371E4(BallRotation *param0)
         {
             int v0;
 
-            if (ov12_02235EB0(param0->unk_90.type) == 1) {
+            if (ov12_02235EB0(param0->ballThrow.type) == 1) {
                 v0 = (LCRNG_Next() % 20) + 10;
 
-                ManagedSprite_OffsetAffineZRotation(param0->unk_30, 0x2000 * v0);
+                ManagedSprite_OffsetAffineZRotation(param0->sprite, 0x2000 * v0);
             }
         }
         break;
     case 1:
-        if (ov12_02235EB0(param0->unk_90.type) == 1) {
-            ManagedSprite_OffsetAffineZRotation(param0->unk_30, 0x2000);
+        if (ov12_02235EB0(param0->ballThrow.type) == 1) {
+            ManagedSprite_OffsetAffineZRotation(param0->sprite, 0x2000);
 
             if (param0->unk_B8.unk_0C > ((param0->unk_B8.unk_08 / 2) + 10)) {
-                ManagedSprite_OffsetAffineZRotation(param0->unk_30, 0x2000);
+                ManagedSprite_OffsetAffineZRotation(param0->sprite, 0x2000);
             }
 
-            if (ov12_02235EF0(param0->unk_90.type) == 1) {
+            if (ov12_02235EF0(param0->ballThrow.type) == 1) {
                 if (param0->unk_B8.unk_0C == ((param0->unk_B8.unk_08 / 2) + 10)) {
                     int v1;
 
-                    v1 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-                    param0->unk_D4 = PaletteFadeContext_New(param0->unk_90.paletteSys, param0->unk_90.heapID, 2, v1 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
+                    v1 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+                    param0->unk_D4 = PaletteFadeContext_New(param0->ballThrow.paletteSys, param0->ballThrow.heapID, 2, v1 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
                 }
             }
         }
 
         param0->unk_B8.unk_0C++;
 
-        if ((param0->unk_90.type >= 6) && (param0->unk_90.type <= 8)) {
+        if ((param0->ballThrow.type >= 6) && (param0->ballThrow.type <= 8)) {
             if ((param0->unk_B8.unk_0C > (param0->unk_B8.unk_08 / 2)) && (param0->unk_B8.unk_0C < ((param0->unk_B8.unk_08 / 2) + 5))) {
                 break;
             }
         }
 
-        if (XYTransformContext_UpdateAndApplyParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->unk_30) == 0) {
+        if (XYTransformContext_UpdateAndApplyParabolic(&param0->unk_48[0], &param0->unk_48[1], param0->sprite) == 0) {
             ov12_02237E24(param0, 0);
             param0->unk_08++;
         }
         break;
     case 2:
-        if ((ov12_02235EF0(param0->unk_90.type) == 1) && (param0->unk_D4 != NULL)) {
+        if ((ov12_02235EF0(param0->ballThrow.type) == 1) && (param0->unk_D4 != NULL)) {
             if (PaletteFadeContext_IsActive(param0->unk_D4) == 1) {
                 break;
             }
@@ -1763,7 +1770,7 @@ static BOOL ov12_022371E4(BallRotation *param0)
 
             return 0;
         } else {
-            if (param0->unk_90.type >= 15) {
+            if (param0->ballThrow.type >= 15) {
                 param0->unk_28 = 1;
 
                 return 0;
@@ -1773,20 +1780,20 @@ static BOOL ov12_022371E4(BallRotation *param0)
         }
         break;
     case 3:
-        ManagedSprite_SetAnim(param0->unk_30, 1);
+        ManagedSprite_SetAnim(param0->sprite, 1);
         ov12_02237E30(param0, 0);
         param0->unk_B8.unk_0C = 0;
         param0->unk_08++;
         break;
     default:
         if (param0->unk_B8.unk_0C == 5) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, 2);
+            ManagedSprite_SetAnimationFrame(param0->sprite, 2);
 
             {
                 int v2;
 
-                v2 = ManagedSprite_GetExplicitPaletteOffset(param0->unk_30);
-                param0->unk_D4 = PaletteFadeContext_New(param0->unk_90.paletteSys, param0->unk_90.heapID, 2, v2 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
+                v2 = ManagedSprite_GetExplicitPaletteOffset(param0->sprite);
+                param0->unk_D4 = PaletteFadeContext_New(param0->ballThrow.paletteSys, param0->ballThrow.heapID, 2, v2 * 16, 16, -2, 2, 0, 14, 0xFFFF, 1002);
             }
 
             param0->unk_28 = 1;
@@ -1816,16 +1823,16 @@ static const int Unk_ov12_0223ABBC[][2] = {
     { 0x0, 0x6 }
 };
 
-static BOOL ov12_02237474(BallRotation *param0)
+static BOOL ov12_02237474(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0:
         ov12_02237E30(param0, 0);
-        ManagedSprite_SetAnim(param0->unk_30, 1);
+        ManagedSprite_SetAnim(param0->sprite, 1);
         param0->unk_B8.unk_0C++;
 
         if (param0->unk_B8.unk_0C >= Unk_ov12_0223ABBC[0][1]) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, Unk_ov12_0223ABBC[0][0]);
+            ManagedSprite_SetAnimationFrame(param0->sprite, Unk_ov12_0223ABBC[0][0]);
             param0->unk_B8.unk_0C = 0;
             param0->unk_08++;
         }
@@ -1834,7 +1841,7 @@ static BOOL ov12_02237474(BallRotation *param0)
         param0->unk_B8.unk_0C++;
 
         if (param0->unk_B8.unk_0C >= Unk_ov12_0223ABBC[1][1]) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, Unk_ov12_0223ABBC[1][0]);
+            ManagedSprite_SetAnimationFrame(param0->sprite, Unk_ov12_0223ABBC[1][0]);
             param0->unk_B8.unk_0C = 0;
             param0->unk_08++;
         }
@@ -1842,12 +1849,12 @@ static BOOL ov12_02237474(BallRotation *param0)
     case 2: {
         UnkStruct_ov12_02236690 v0;
 
-        v0.unk_04 = param0->unk_90.ballID;
-        v0.heapID = param0->unk_90.heapID;
+        v0.unk_04 = param0->ballThrow.ballID;
+        v0.heapID = param0->ballThrow.heapID;
         v0.unk_0C = 0xFF;
         v0.unk_10 = 1;
 
-        ManagedSprite_GetPositionXY(param0->unk_30, &v0.unk_00, &v0.unk_02);
+        ManagedSprite_GetPositionXY(param0->sprite, &v0.unk_00, &v0.unk_02);
         param0->unk_D0 = ov12_02236690(&v0);
     }
         param0->unk_08++;
@@ -1860,7 +1867,7 @@ static BOOL ov12_02237474(BallRotation *param0)
         param0->unk_B8.unk_0C++;
 
         if (param0->unk_B8.unk_0C >= Unk_ov12_0223ABBC[2][1]) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, Unk_ov12_0223ABBC[2][0]);
+            ManagedSprite_SetAnimationFrame(param0->sprite, Unk_ov12_0223ABBC[2][0]);
             param0->unk_B8.unk_0C = 0;
             param0->unk_08++;
         }
@@ -1869,7 +1876,7 @@ static BOOL ov12_02237474(BallRotation *param0)
         param0->unk_B8.unk_0C++;
 
         if (param0->unk_B8.unk_0C >= Unk_ov12_0223ABBC[3][1]) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, Unk_ov12_0223ABBC[3][0]);
+            ManagedSprite_SetAnimationFrame(param0->sprite, Unk_ov12_0223ABBC[3][0]);
             param0->unk_B8.unk_0C = 0;
             param0->unk_08++;
         }
@@ -1878,7 +1885,7 @@ static BOOL ov12_02237474(BallRotation *param0)
         param0->unk_B8.unk_0C++;
 
         if (param0->unk_B8.unk_0C >= Unk_ov12_0223ABBC[4][1]) {
-            ManagedSprite_SetAnimationFrame(param0->unk_30, Unk_ov12_0223ABBC[4][0]);
+            ManagedSprite_SetAnimationFrame(param0->sprite, Unk_ov12_0223ABBC[4][0]);
             param0->unk_B8.unk_0C = 0;
             param0->unk_08++;
         }
@@ -1897,7 +1904,7 @@ static BOOL ov12_02237474(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02237608(BallRotation *param0)
+static BOOL ov12_02237608(PokeballAnim *param0)
 {
     switch (param0->unk_08) {
     case 0: {
@@ -1912,7 +1919,7 @@ static BOOL ov12_02237608(BallRotation *param0)
         param0->unk_08++;
         break;
     case 1:
-        ManagedSprite_SetAffineZRotation(param0->unk_30, param0->unk_34.value);
+        ManagedSprite_SetAffineZRotation(param0->sprite, param0->unk_34.value);
 
         if (ValueLerpContext_Update(&param0->unk_34) == 0) {
             if (param0->unk_0C >= 1) {
@@ -1932,419 +1939,427 @@ static BOOL ov12_02237608(BallRotation *param0)
     return 1;
 }
 
-static BOOL ov12_02237694(BallRotation *param0)
+static BOOL ov12_02237694(PokeballAnim *param0)
 {
     if (param0->unk_08 == 0xFF) {
         return 0;
     }
 
-    if (param0->unk_30 != NULL) {
+    if (param0->sprite != NULL) {
         s16 v0, v1;
 
-        ManagedSprite_GetPositionXY(param0->unk_30, &v0, &v1);
+        ManagedSprite_GetPositionXY(param0->sprite, &v0, &v1);
 
-        param0->unk_B8.unk_00 = v0;
-        param0->unk_B8.unk_02 = v1;
+        param0->unk_B8.startX = v0;
+        param0->unk_B8.startY = v1;
     }
 
     return 1;
 }
 
-static void ov12_022376D0(SysTask *param0, void *param1)
+static void Task_PokeballAnim(SysTask *task, void *param)
 {
-    BOOL v0;
-    BallRotation *v1 = (BallRotation *)param1;
+    PokeballAnim *anim = param;
 
-    if (v1->unk_1C == 0) {
+    if (anim->active == FALSE) {
         return;
     }
 
-    if (v1->unk_DC > 0) {
-        v1->unk_DC--;
-        SpriteSystem_DrawSprites(v1->unk_2C);
+    if (anim->pauseTimer > 0) {
+        anim->pauseTimer--;
+        SpriteSystem_DrawSprites(anim->spriteMan);
         return;
     }
 
-    v0 = Unk_ov12_0223AB84[v1->unk_90.mode](v1);
-
-    if (v0 == 0) {
-        v1->unk_1C = 0;
+    BOOL active = sBallThrowTaskFuncs[anim->ballThrow.mode](anim);
+    if (active == FALSE) {
+        anim->active = FALSE;
     }
 
-    if (v1->unk_24 == 1) {
-        ManagedSprite_TickFrame(v1->unk_30);
+    if (anim->animate == TRUE) {
+        ManagedSprite_TickFrame(anim->sprite);
     }
 
-    SpriteSystem_DrawSprites(v1->unk_2C);
+    SpriteSystem_DrawSprites(anim->spriteMan);
 }
 
-BallRotation *ov12_02237728(BallThrow *param0)
+PokeballAnim *PokeballAnim_New(BallThrow *ballThrow)
 {
-    BallRotation *v0 = NULL;
+    PokeballAnim *anim = Heap_Alloc(ballThrow->heapID, sizeof(PokeballAnim));
+    MI_CpuClear8(anim, sizeof(PokeballAnim));
 
-    v0 = Heap_Alloc(param0->heapID, sizeof(BallRotation));
-    MI_CpuClear8(v0, sizeof(BallRotation));
+    GF_ASSERT(anim != NULL);
 
-    GF_ASSERT(v0 != NULL);
-
-    v0->unk_90 = (*param0);
-    v0->unk_08 = 0;
-    v0->unk_10 = 0;
-    v0->unk_0C = 0;
-    v0->unk_14 = 0;
-    v0->unk_18 = 0;
-    v0->unk_00 = 0;
-    v0->unk_04 = 0;
-    v0->unk_2C = SpriteManager_New(v0->unk_90.cellActorSys);
-    v0->unk_DC = 0;
-    v0->unk_24 = ov12_02235F2C(v0->unk_90.type);
-    v0->unk_B8.unk_0C = 0;
-    v0->unk_20 = 16;
-    v0->unk_21 = 0;
+    anim->ballThrow = *ballThrow;
+    anim->unk_08 = 0;
+    anim->unk_10 = 0;
+    anim->unk_0C = 0;
+    anim->unk_14 = 0;
+    anim->unk_18 = 0;
+    anim->unk_00 = 0;
+    anim->unk_04 = 0;
+    anim->spriteMan = SpriteManager_New(anim->ballThrow.spriteSys);
+    anim->pauseTimer = 0;
+    anim->animate = ShouldAnimatePokeball(anim->ballThrow.type);
+    anim->unk_B8.unk_0C = 0;
+    anim->unk_20 = 16;
+    anim->unk_21 = 0;
 
     BattleAnimSystem_SetDefaultAlphaBlending();
 
-    {
-        int v1;
-
-        v1 = LCRNG_Next() % 2;
-
-        if (v1) {
-            v0->unk_22 = +1;
-        } else {
-            v0->unk_22 = -1;
-        }
+    int v1 = LCRNG_Next() % 2;
+    if (v1) {
+        anim->unused = +1;
+    } else {
+        anim->unused = -1;
     }
 
-    ov12_02237C54(v0);
-    ov12_02237D8C(v0);
-    ov12_022378A0(v0);
+    PokeballAnim_LoadResources(anim);
+    PokeballAnim_CreateSprite(anim);
+    ov12_022378A0(anim);
 
-    v0->unk_1C = 1;
-    v0->unk_28 = 0;
-    v0->unk_CC = SysTask_Start(ov12_022376D0, v0, 1000);
+    anim->active = 1;
+    anim->unk_28 = 0;
+    anim->unk_CC = SysTask_Start(Task_PokeballAnim, anim, 1000);
 
-    return v0;
+    return anim;
 }
 
-BOOL ov12_022377F8(BallRotation *param0)
+BOOL ov12_022377F8(PokeballAnim *param0)
 {
     GF_ASSERT(param0 != NULL);
-    return param0->unk_1C ? 1 : 0;
+    return param0->active ? 1 : 0;
 }
 
-BOOL ov12_02237810(BallRotation *param0)
+BOOL ov12_02237810(PokeballAnim *param0)
 {
     GF_ASSERT(param0 != NULL);
     return param0->unk_28 ? 1 : 0;
 }
 
-void ov12_02237828(BallRotation *param0, int param1)
+void ov12_02237828(PokeballAnim *param0, int param1)
 {
     param0->unk_14 = param1;
 }
 
-BOOL ov12_0223782C(BallRotation *param0, int param1)
+BOOL ov12_0223782C(PokeballAnim *param0, int param1)
 {
     return (param0->unk_14 == param1) ? 1 : 0;
 }
 
-void ov12_0223783C(BallRotation *param0)
+void ov12_0223783C(PokeballAnim *param0)
 {
-    int v0 = param0->unk_90.heapID;
+    int v0 = param0->ballThrow.heapID;
 
     GF_ASSERT(param0 != NULL);
 
-    SpriteSystem_FreeResourcesAndManager(param0->unk_90.cellActorSys, param0->unk_2C);
-    Sprite_DeleteAndFreeResources(param0->unk_30);
+    SpriteSystem_FreeResourcesAndManager(param0->ballThrow.spriteSys, param0->spriteMan);
+    Sprite_DeleteAndFreeResources(param0->sprite);
     SysTask_Done(param0->unk_CC);
     Heap_Free(param0);
 }
 
-void ov12_0223786C(BallRotation *param0, int param1)
+void ov12_0223786C(PokeballAnim *param0, int param1)
 {
-    param0->unk_90.mode = param1;
+    param0->ballThrow.mode = param1;
     param0->unk_08 = 0;
     param0->unk_0C = 0;
     param0->unk_10 = 0;
-    param0->unk_1C = 1;
+    param0->active = 1;
 
-    ManagedSprite_GetPositionXY(param0->unk_30, &param0->unk_B8.unk_00, &param0->unk_B8.unk_02);
+    ManagedSprite_GetPositionXY(param0->sprite, &param0->unk_B8.startX, &param0->unk_B8.startY);
 }
 
-int ov12_02237890(BallRotation *param0)
+int ov12_02237890(PokeballAnim *param0)
 {
     GF_ASSERT(param0 != NULL);
 
-    return param0->unk_90.mode;
+    return param0->ballThrow.mode;
 }
 
-static void ov12_022378A0(BallRotation *param0)
+static void ov12_022378A0(PokeballAnim *anim)
 {
-    ManagedSprite_GetPositionXY(param0->unk_30, &param0->unk_B8.unk_00, &param0->unk_B8.unk_02);
+    ManagedSprite_GetPositionXY(anim->sprite, &anim->unk_B8.startX, &anim->unk_B8.startY);
 
-    switch (param0->unk_90.type) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-        ManagedSprite_GetPositionXY(param0->unk_30, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 0;
-        param0->unk_B8.unk_08 = 12;
+    switch (anim->ballThrow.type) {
+    case BALL_THROW_TYPE_SOLO_PLAYER:
+    case BALL_THROW_TYPE_SOLO_ENEMY:
+    case BALL_THROW_TYPE_PLAYER_SLOT_1:
+    case BALL_THROW_TYPE_ENEMY_SLOT_1:
+    case BALL_THROW_TYPE_PLAYER_SLOT_2:
+    case BALL_THROW_TYPE_ENEMY_SLOT_2:
+        ManagedSprite_GetPositionXY(anim->sprite, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 0;
+        anim->unk_B8.unk_08 = 12;
         return;
-    case 6:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 48;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_6:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 48;
+        anim->unk_B8.endY += 32;
         break;
-    case 7:
-        ManagedSprite_GetPositionXY(param0->unk_30, &param0->unk_B8.unk_00, &param0->unk_B8.unk_02);
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 4, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 48;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_7:
+        ManagedSprite_GetPositionXY(anim->sprite, &anim->unk_B8.startX, &anim->unk_B8.startY);
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_PLAYER_SIDE_SLOT_2, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 48;
+        anim->unk_B8.endY += 32;
         break;
-    case 8:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 2, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 48;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_8:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_PLAYER_SIDE_SLOT_1, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 48;
+        anim->unk_B8.endY += 32;
         break;
-    case 9:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 1, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 48;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_9:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_ENEMY, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 48;
+        anim->unk_B8.endY += 32;
         break;
-    case 10:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 3, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 48;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_10:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_ENEMY_SIDE_SLOT_1, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 48;
+        anim->unk_B8.endY += 32;
         break;
-    case 11:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 5, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 48;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_11:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_ENEMY_SIDE_SLOT_2, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 48;
+        anim->unk_B8.endY += 32;
         break;
-    case 12:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 1, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 16;
-        param0->unk_B8.unk_06 += 16;
-        param0->unk_B8.unk_08 = 12;
+    case BALL_THROW_TYPE_12:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_ENEMY, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 16;
+        anim->unk_B8.endY += 16;
+        anim->unk_B8.unk_08 = 12;
         return;
-    case 13:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 1, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 32;
-        param0->unk_B8.unk_04 -= 20;
-        param0->unk_B8.unk_06 += 38;
-        param0->unk_B8.unk_08 = 16;
+    case BALL_THROW_TYPE_13:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_ENEMY, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 32;
+        anim->unk_B8.endX -= 20;
+        anim->unk_B8.endY += 38;
+        anim->unk_B8.unk_08 = 16;
         return;
-    case 14:
-        param0->unk_B8.unk_04 = 128;
-        param0->unk_B8.unk_06 = (96 - 32);
-        param0->unk_B8.unk_10 = 32;
-        param0->unk_B8.unk_06 += 32;
+    case BALL_THROW_TYPE_14:
+        anim->unk_B8.endX = 128;
+        anim->unk_B8.endY = (96 - 32);
+        anim->unk_B8.unk_10 = 32;
+        anim->unk_B8.endY += 32;
         break;
-    case 15:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 1, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 64;
-        param0->unk_B8.unk_06 += 8;
-        param0->unk_B8.unk_08 = 16;
+    case BALL_THROW_TYPE_15:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_ENEMY, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 64;
+        anim->unk_B8.endY += 8;
+        anim->unk_B8.unk_08 = 16;
         return;
-    case 16:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 3, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 64;
-        param0->unk_B8.unk_06 += 8;
-        param0->unk_B8.unk_08 = 16;
+    case BALL_THROW_TYPE_16:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_ENEMY_SIDE_SLOT_1, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 64;
+        anim->unk_B8.endY += 8;
+        anim->unk_B8.unk_08 = 16;
         return;
-    case 17:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 5, &param0->unk_B8.unk_04, &param0->unk_B8.unk_06);
-        param0->unk_B8.unk_10 = 64;
-        param0->unk_B8.unk_06 += 8;
-        param0->unk_B8.unk_08 = 16;
+    case BALL_THROW_TYPE_17:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_ENEMY_SIDE_SLOT_2, &anim->unk_B8.endX, &anim->unk_B8.endY);
+        anim->unk_B8.unk_10 = 64;
+        anim->unk_B8.endY += 8;
+        anim->unk_B8.unk_08 = 16;
         return;
     default:
         break;
     }
 
-    param0->unk_B8.unk_08 = 20;
+    anim->unk_B8.unk_08 = 20;
 }
 
-static void ov12_02237B14(BallRotation *param0, s16 *param1, s16 *param2)
+static void PokeballAnim_GetBallStartPosition(PokeballAnim *anim, s16 *px, s16 *py)
 {
-    switch (param0->unk_90.type) {
-    case 0:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, param1, param2);
-        (*param2) += (32 + 8);
+    switch (anim->ballThrow.type) {
+    case BALL_THROW_TYPE_SOLO_PLAYER:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, px, py);
+        *py += 32 + 8;
         break;
-    case 1:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 1, param1, param2);
-        (*param2) += 38;
+    case BALL_THROW_TYPE_SOLO_ENEMY:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_ENEMY, px, py);
+        *py += 38;
         break;
-    case 2:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 2, param1, param2);
-        (*param2) += (32 + 8);
+    case BALL_THROW_TYPE_PLAYER_SLOT_1:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_PLAYER_SIDE_SLOT_1, px, py);
+        *py += 32 + 8;
         break;
-    case 4:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 4, param1, param2);
-        (*param2) += (32 + 8);
+    case BALL_THROW_TYPE_PLAYER_SLOT_2:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_PLAYER_SIDE_SLOT_2, px, py);
+        *py += 32 + 8;
         break;
-    case 3:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 3, param1, param2);
-        (*param2) += 38;
+    case BALL_THROW_TYPE_ENEMY_SLOT_1:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_ENEMY_SIDE_SLOT_1, px, py);
+        *py += 38;
         break;
-    case 5:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(1, 5, param1, param2);
-        (*param2) += 38;
+    case BALL_THROW_TYPE_ENEMY_SLOT_2:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(TRUE, BATTLER_TYPE_ENEMY_SIDE_SLOT_2, px, py);
+        *py += 38;
         break;
-    case 6:
-        *param1 = 10;
-        *param2 = 100;
+    case BALL_THROW_TYPE_6:
+        *px = 10;
+        *py = 100;
         break;
-    case 7:
-        *param1 = 10;
-        *param2 = 100;
+    case BALL_THROW_TYPE_7:
+        *px = 10;
+        *py = 100;
         break;
-    case 8:
-        *param1 = 10;
-        *param2 = 100;
+    case BALL_THROW_TYPE_8:
+        *px = 10;
+        *py = 100;
         break;
-    case 9:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, param1, param2);
+    case BALL_THROW_TYPE_9:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, px, py);
         break;
-    case 10:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, param1, param2);
+    case BALL_THROW_TYPE_10:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, px, py);
         break;
-    case 11:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, param1, param2);
+    case BALL_THROW_TYPE_11:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, px, py);
         break;
-    case 12:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, param1, param2);
+    case BALL_THROW_TYPE_12:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, px, py);
         break;
-    case 13:
-        BattleAnimUtil_GetBattlerTypeDefaultPos2(0, 0, param1, param2);
+    case BALL_THROW_TYPE_13:
+        BattleAnimUtil_GetBattlerTypeDefaultPos2(FALSE, BATTLER_TYPE_SOLO_PLAYER, px, py);
         break;
-    case 14:
-        *param1 = 230;
-        *param2 = 32;
+    case BALL_THROW_TYPE_14:
+        *px = 230;
+        *py = 32;
         break;
-    case 15:
-    case 16:
-    case 17:
-        *param1 = -30;
-        *param2 = 160;
+    case BALL_THROW_TYPE_15:
+    case BALL_THROW_TYPE_16:
+    case BALL_THROW_TYPE_17:
+        *px = -30;
+        *py = 160;
         break;
     default:
         break;
     }
 }
 
-static void ov12_02237C54(BallRotation *param0)
+static void PokeballAnim_LoadResources(PokeballAnim *anim)
 {
-    int v0;
-    int v1;
-    int v2;
-    int v3;
+    SpriteSystem_InitSprites(anim->ballThrow.spriteSys, anim->spriteMan, POKEBALL_ANIM_MAX_SPRITES);
 
-    SpriteSystem_InitSprites(param0->unk_90.cellActorSys, param0->unk_2C, 10);
-
-    if (param0->unk_90.surface == 0) {
-        SetSubScreenViewRect(SpriteSystem_GetRenderer(param0->unk_90.cellActorSys), 0, (192 + 80) << FX32_SHIFT);
+    if (anim->ballThrow.surface == 0) {
+        SetSubScreenViewRect(SpriteSystem_GetRenderer(anim->ballThrow.spriteSys), 0, FX32_CONST(HW_LCD_HEIGHT + 80));
     }
 
-    {
-        int v4;
-        SpriteResourceCapacities v5;
-
-        for (v4 = 0; v4 < 6; v4++) {
-            v5.asArray[v4] = 10;
-        }
-
-        v5.asArray[4] = 0;
-        v5.asArray[5] = 0;
-
-        SpriteSystem_InitManagerWithCapacities(param0->unk_90.cellActorSys, param0->unk_2C, &v5);
+    SpriteResourceCapacities caps;
+    for (int i = 0; i < SPRITE_RESOURCE_MAX; i++) {
+        caps.asArray[i] = POKEBALL_ANIM_MAX_RESOURCES;
     }
 
-    v0 = ov12_02235FC8(param0->unk_90.ballID, 0);
-    v1 = ov12_02235FC8(param0->unk_90.ballID, 1);
-    v2 = ov12_02235FC8(param0->unk_90.ballID, 2);
-    v3 = ov12_02235FC8(param0->unk_90.ballID, 3);
+    caps.asArray[SPRITE_RESOURCE_MULTI_CELL] = 0;
+    caps.asArray[SPRITE_RESOURCE_MULTI_ANIM] = 0;
 
-    {
-        NARC *v6;
+    SpriteSystem_InitManagerWithCapacities(anim->ballThrow.spriteSys, anim->spriteMan, &caps);
 
-        v6 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, param0->unk_90.heapID);
+    int ncgrIndex = GetPokeballGraphics(anim->ballThrow.ballID, SPRITE_RESOURCE_CHAR);
+    int nclrIndex = GetPokeballGraphics(anim->ballThrow.ballID, SPRITE_RESOURCE_PLTT);
+    int ncerIndex = GetPokeballGraphics(anim->ballThrow.ballID, SPRITE_RESOURCE_CELL);
+    int nanrIndex = GetPokeballGraphics(anim->ballThrow.ballID, SPRITE_RESOURCE_ANIM);
 
-        SpriteSystem_LoadCharResObjFromOpenNarc(param0->unk_90.cellActorSys, param0->unk_2C, v6, v0, TRUE, NNS_G2D_VRAM_TYPE_2DMAIN, param0->unk_90.target + 6000);
-        SpriteSystem_LoadPaletteBufferFromOpenNarc(param0->unk_90.paletteSys, 2, param0->unk_90.cellActorSys, param0->unk_2C, v6, v1, 0, NNS_G2D_VRAM_TYPE_2DMAIN, 1, param0->unk_90.target + 6000);
-        SpriteSystem_LoadCellResObjFromOpenNarc(param0->unk_90.cellActorSys, param0->unk_2C, v6, v2, TRUE, param0->unk_90.target + 6000);
-        SpriteSystem_LoadAnimResObjFromOpenNarc(param0->unk_90.cellActorSys, param0->unk_2C, v6, v3, TRUE, param0->unk_90.target + 6000);
-        NARC_dtor(v6);
-    }
+    NARC *narc = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, anim->ballThrow.heapID);
+
+    SpriteSystem_LoadCharResObjFromOpenNarc(
+        anim->ballThrow.spriteSys,
+        anim->spriteMan,
+        narc,
+        ncgrIndex,
+        TRUE,
+        NNS_G2D_VRAM_TYPE_2DMAIN,
+        anim->ballThrow.target + POKEBALL_ANIM_BASE_RES_ID);
+
+    SpriteSystem_LoadPaletteBufferFromOpenNarc(
+        anim->ballThrow.paletteSys,
+        PLTTBUF_MAIN_OBJ,
+        anim->ballThrow.spriteSys,
+        anim->spriteMan,
+        narc,
+        nclrIndex,
+        FALSE,
+        1,
+        NNS_G2D_VRAM_TYPE_2DMAIN,
+        anim->ballThrow.target + POKEBALL_ANIM_BASE_RES_ID);
+
+    SpriteSystem_LoadCellResObjFromOpenNarc(
+        anim->ballThrow.spriteSys,
+        anim->spriteMan,
+        narc,
+        ncerIndex,
+        TRUE,
+        anim->ballThrow.target + POKEBALL_ANIM_BASE_RES_ID);
+
+    SpriteSystem_LoadAnimResObjFromOpenNarc(
+        anim->ballThrow.spriteSys,
+        anim->spriteMan,
+        narc,
+        nanrIndex,
+        TRUE,
+        anim->ballThrow.target + POKEBALL_ANIM_BASE_RES_ID);
+
+    NARC_dtor(narc);
 }
 
-static void ov12_02237D8C(BallRotation *param0)
+static void PokeballAnim_CreateSprite(PokeballAnim *anim)
 {
-    int v0;
-    SpriteTemplate v1;
-    int v2;
+    SpriteTemplate template;
+    PokeballAnim_GetBallStartPosition(anim, &template.x, &template.y);
 
-    ov12_02237B14(param0, &v1.x, &v1.y);
+    template.z = 0;
+    template.animIdx = 0;
+    template.priority = 0;
+    template.plttIdx = 0;
+    template.vramType = NNS_G2D_VRAM_TYPE_2DMAIN;
+    template.bgPriority = anim->ballThrow.bgPrio;
+    template.vramTransfer = FALSE;
 
-    v1.z = 0;
-    v1.animIdx = 0;
-    v1.priority = 0;
-    v1.plttIdx = 0;
-    v1.vramType = NNS_G2D_VRAM_TYPE_2DMAIN;
-    v1.bgPriority = param0->unk_90.bgPrio;
-    v1.vramTransfer = FALSE;
-
-    for (v0 = 0; v0 < 6; v0++) {
-        v1.resources[v0] = param0->unk_90.target + 6000;
+    for (int i = 0; i < SPRITE_RESOURCE_MAX; i++) {
+        template.resources[i] = anim->ballThrow.target + POKEBALL_ANIM_BASE_RES_ID;
     }
 
-    param0->unk_30 = SpriteSystem_NewSprite(param0->unk_90.cellActorSys, param0->unk_2C, &v1);
+    anim->sprite = SpriteSystem_NewSprite(anim->ballThrow.spriteSys, anim->spriteMan, &template);
 
-    ManagedSprite_SetDrawFlag(param0->unk_30, TRUE);
-    ManagedSprite_SetAffineOverwriteMode(param0->unk_30, AFFINE_OVERWRITE_MODE_DOUBLE);
-    ManagedSprite_SetAnimationFrame(param0->unk_30, 0);
-    ManagedSprite_SetAnim(param0->unk_30, 0);
-    ManagedSprite_TickFrame(param0->unk_30);
+    ManagedSprite_SetDrawFlag(anim->sprite, TRUE);
+    ManagedSprite_SetAffineOverwriteMode(anim->sprite, AFFINE_OVERWRITE_MODE_DOUBLE);
+    ManagedSprite_SetAnimationFrame(anim->sprite, 0);
+    ManagedSprite_SetAnim(anim->sprite, 0);
+    ManagedSprite_TickFrame(anim->sprite);
 
     BattleAnimSystem_SetDefaultAlphaBlending();
 }
 
-void ov12_02237E0C(BallRotation *param0, int param1)
+void ov12_02237E0C(PokeballAnim *param0, int param1)
 {
-    ManagedSprite_SetDrawFlag(param0->unk_30, param1);
+    ManagedSprite_SetDrawFlag(param0->sprite, param1);
 }
 
-void ov12_02237E18(BallRotation *param0, s16 param1, s16 param2)
+void ov12_02237E18(PokeballAnim *param0, s16 param1, s16 param2)
 {
-    ManagedSprite_SetPositionXY(param0->unk_30, param1, param2);
+    ManagedSprite_SetPositionXY(param0->sprite, param1, param2);
 }
 
-void ov12_02237E24(BallRotation *param0, u16 param1)
+void ov12_02237E24(PokeballAnim *param0, u16 param1)
 {
-    ManagedSprite_SetAffineZRotation(param0->unk_30, param1);
+    ManagedSprite_SetAffineZRotation(param0->sprite, param1);
 }
 
-void ov12_02237E30(BallRotation *param0, BOOL param1)
+void ov12_02237E30(PokeballAnim *param0, BOOL param1)
 {
-    param0->unk_24 = param1;
+    param0->animate = param1;
 }
 
-void ov12_02237E34(BallRotation *param0, int param1)
+void ov12_02237E34(PokeballAnim *param0, int param1)
 {
-    ManagedSprite_SetPriority(param0->unk_30, param1);
+    ManagedSprite_SetPriority(param0->sprite, param1);
 }
 
-void ov12_02237E40(BallRotation *param0, int param1)
+void ov12_02237E40(PokeballAnim *param0, int param1)
 {
-    ManagedSprite_SetExplicitPriority(param0->unk_30, param1);
+    ManagedSprite_SetExplicitPriority(param0->sprite, param1);
 }
 
-void ov12_02237E4C(BallRotation *param0, int param1)
+void ov12_02237E4C(PokeballAnim *param0, int param1)
 {
-    param0->unk_DC = param1;
+    param0->pauseTimer = param1;
 }

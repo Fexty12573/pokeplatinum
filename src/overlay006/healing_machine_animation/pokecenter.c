@@ -101,7 +101,7 @@ static BOOL FieldTask_PlayHealingAnimation_Pokecenter(FieldTask *param0)
         MapProp *pokeballMapProp;
         NNSG3dRenderObj *pokeballRenderObj;
         VecFx32 pokeballPosition;
-        VecFx32 pokeballRotation = { 0, 0, 0 };
+        VecFx32 pokePokeballAnim = { 0, 0, 0 };
 
         pokeballPosition.x = animation->position.x + PokecenterHealingAnimation_PokeballOffsets[animation->currentPokeballIndex].x;
         pokeballPosition.y = animation->position.y + PokecenterHealingAnimation_PokeballOffsets[animation->currentPokeballIndex].y;
@@ -109,7 +109,7 @@ static BOOL FieldTask_PlayHealingAnimation_Pokecenter(FieldTask *param0)
 
         Sound_PlayEffect(SEQ_SE_DP_BOWA);
 
-        animation->pokeballLoadedPropIDs[animation->currentPokeballIndex] = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, pokecenter_healing_machine_mini_pokeball_nsbmd, &pokeballPosition, &pokeballRotation, fieldSystem->mapPropAnimMan);
+        animation->pokeballLoadedPropIDs[animation->currentPokeballIndex] = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, pokecenter_healing_machine_mini_pokeball_nsbmd, &pokeballPosition, &pokePokeballAnim, fieldSystem->mapPropAnimMan);
 
         pokeballMapProp = MapPropManager_GetLoadedPropSafely(fieldSystem->mapPropManager, animation->pokeballLoadedPropIDs[animation->currentPokeballIndex]);
         pokeballRenderObj = MapProp_GetRenderObj(pokeballMapProp);

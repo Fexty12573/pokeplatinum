@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_BALL_ROTATION_DECL_H
 #define POKEPLATINUM_STRUCT_BALL_ROTATION_DECL_H
 
-typedef struct BallRotation BallRotation;
+typedef struct PokeballAnim PokeballAnim;
 
 #endif // POKEPLATINUM_STRUCT_BALL_ROTATION_DECL_H

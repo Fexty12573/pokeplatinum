@@ -143,17 +143,17 @@ void BattlerData_InitSendOutBallThrow(BattleSystem *battleSys, BattlerData *batt
     ballThrow.mode = BALL_THROW_MODE_TRAINER_SEND_OUT;
     ballThrow.target = battlerData->battler;
     ballThrow.ballID = ballID;
-    ballThrow.cellActorSys = BattleSystem_GetSpriteSystem(battleSys);
+    ballThrow.spriteSys = BattleSystem_GetSpriteSystem(battleSys);
     ballThrow.paletteSys = BattleSystem_GetPaletteData(battleSys);
     ballThrow.surface = 0;
     ballThrow.bgPrio = 1;
 
-    battlerData->ballRotation = ov12_02237728(&ballThrow);
+    battlerData->PokeballAnim = PokeballAnim_New(&ballThrow);
 
-    ov12_02237E34(battlerData->ballRotation, 100);
-    ov12_02237E40(battlerData->ballRotation, 2);
-    ov12_02237E0C(battlerData->ballRotation, 0);
-    ov12_02237E30(battlerData->ballRotation, 0);
+    ov12_02237E34(battlerData->PokeballAnim, 100);
+    ov12_02237E40(battlerData->PokeballAnim, 2);
+    ov12_02237E0C(battlerData->PokeballAnim, 0);
+    ov12_02237E30(battlerData->PokeballAnim, 0);
 }
 
 static const BattleCommandPtr sBattleCommands[] = {
