@@ -26,7 +26,7 @@ void ov12_02236780(UnkStruct_ov12_02236648 *param0);
 void ov12_022368C8(PokeballAnim *param0, int param1);
 BOOL ov12_022368D0(PokeballAnim *param0, int param1);
 PokeballAnim *PokeballAnim_New(BallThrow *ballThrow);
-BOOL ov12_022377F8(PokeballAnim *param0);
+BOOL PokeballAnim_IsActive(PokeballAnim *param0);
 BOOL ov12_02237810(PokeballAnim *param0);
 void ov12_02237828(PokeballAnim *param0, int param1);
 BOOL ov12_0223782C(PokeballAnim *param0, int param1);

@@ -881,7 +881,7 @@ static BOOL ov76_0223DF94(UnkStruct_ov76_0223DE00 *param0)
         case 4: {
             BOOL v4 = ov76_0223DE78(param0);
 
-            if (ov12_022377F8(param0->unk_D4.unk_158) != 0) {
+            if (PokeballAnim_IsActive(param0->unk_D4.unk_158) != 0) {
                 break;
             }
 
@@ -939,7 +939,7 @@ static BOOL ov76_0223DF94(UnkStruct_ov76_0223DE00 *param0)
         case 7: {
             BOOL v6 = ov76_0223DEF4(param0);
 
-            if ((ov12_022377F8(param0->unk_D4.unk_158) == 0) && (v6 == 0)) {
+            if ((PokeballAnim_IsActive(param0->unk_D4.unk_158) == 0) && (v6 == 0)) {
                 PaletteData_StartFade(param0->unk_D4.unk_14, 0x2, (1 << 0) | (1 << 1) | (1 << 3) | (1 << 11), 0, 10, 0, 0);
                 PaletteData_StartFade(param0->unk_D4.unk_14, 0x8, 0xFFFF, 0, 10, 0, 0);
                 ov76_0223DF70(param0, 1);

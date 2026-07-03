@@ -2069,7 +2069,7 @@ static void Task_ShowEncounter(SysTask *task, void *data)
         }
         break;
     case 3:
-        if (ov12_022377F8(monShowData->battlerData->PokeballAnim) != 1) {
+        if (PokeballAnim_IsActive(monShowData->battlerData->PokeballAnim) != 1) {
             monShowData->state++;
         }
     case 4:
@@ -2312,7 +2312,7 @@ static void Task_ShowPokemon(SysTask *task, void *data)
         }
         break;
     case 3:
-        if (ov12_022377F8(monShowData->PokeballAnim) != 1) {
+        if (PokeballAnim_IsActive(monShowData->PokeballAnim) != 1) {
             monShowData->state++;
         }
     case 4:
@@ -2579,7 +2579,7 @@ static void Task_ReturnPokemon(SysTask *task, void *data)
 
         break;
     case 7:
-        if (ov12_022377F8(monReturnData->PokeballAnim) == 0) {
+        if (PokeballAnim_IsActive(monReturnData->PokeballAnim) == 0) {
             ov12_0223783C(monReturnData->PokeballAnim);
             monReturnData->state = 8;
         }
@@ -2999,7 +2999,7 @@ static void Task_ThrowTrainerBall(SysTask *task, void *data)
         }
         break;
     case 5:
-        if (ov12_022377F8(trainerThrowBallData->battlerData->PokeballAnim) == 1) {
+        if (PokeballAnim_IsActive(trainerThrowBallData->battlerData->PokeballAnim) == 1) {
             break;
         }
 

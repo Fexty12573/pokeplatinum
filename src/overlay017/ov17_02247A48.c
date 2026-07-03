@@ -993,7 +993,7 @@ static void ov17_02248A24(SysTask *param0, void *param1)
         v0->unk_08++;
         break;
     case 2:
-        if (ov12_022377F8(v0->PokeballAnim) == 1) {
+        if (PokeballAnim_IsActive(v0->PokeballAnim) == 1) {
             break;
         }
     default:
